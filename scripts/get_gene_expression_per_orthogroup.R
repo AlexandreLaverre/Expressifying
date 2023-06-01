@@ -60,8 +60,11 @@ for(tissue in tissues){
   print(paste(length(species), "species;", 
               nrow(express_ortho_all_sp), "samples;", 
               ncol(express_ortho_all_sp)-1, "genes."))
-
-  write.csv(express_ortho_all_sp, file=paste0(path, "results/mammals_", tissue, "_gene_expression_orthogroups.csv"))
+  
+  # add sample as column
+  express_ortho_all_sp <- cbind(sample=row.names(express_ortho_all_sp), express_ortho_all_sp)
+    
+  write.csv(express_ortho_all_sp, file=paste0(path, "results/gene_expression/mammals_", tissue, "_gene_expression_orthogroups.csv"), row.names = F)
 }
 
 # liver = 24 species, 585 samples, 481 genes.
