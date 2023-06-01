@@ -1,15 +1,19 @@
 # Folders
-.idea/*
+.idea/
+.snakemake/
 data/*
 docs/*
 results/*
+data_processed/*
+shared-dropbox
 tmp/*
-
+utils/*
+__pycache__
 
 # Default ignored files
 /shelf/
 /workspace.xml
-*/DS_Store
+.DS_Store
 
 
 # Editor-based HTTP Client requests
