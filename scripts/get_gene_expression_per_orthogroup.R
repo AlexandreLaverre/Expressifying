@@ -71,3 +71,13 @@ for(tissue in tissues){
 # cerebellum = 21 species, 112 samples, 577 genes.
 # kidney = 21 species, 153 samples, 600 genes. 
 # testis = 19 species, 160 samples, 750 genes.
+
+# Example to plot gene expression distribution from a given gene + species
+# in all species where this gene has a 1-to-1 ortholog expressed in the same tissue
+sp = "Homo_sapiens"
+gene = "ENSG00000109606"
+orthogroup = row.names(orthogroups[which(orthogroups[[sp]] == gene),])
+expression = expression_ortho[[orthogroup]]
+
+a <- boxplot(expression~expression_ortho$species, outline=F, 
+        ylab="Gene expression (FPKM)", xlab="Species", main=paste(orthogroup, "in", tissue))
