@@ -41,18 +41,17 @@ for(tissue in tissues){
         expression = gene.expression[[sp]][gene,]
       }else{expression = NA}
       
-      # Complete final data.frame
       expression_ortho[samples, orthogroup] = expression
       expression_ortho[samples, "species"] = sp
     }
   }
   
-  ## Filters to get gene expression for each species in each orthogroups
-  # Count the number of non-NA values 
+  ## Filters to get gene expression for each species in each orthogroup
+  # Count the number of non-NA values per species
   species_without_na <- aggregate(!is.na(expression_ortho[, -1]), by = list(expression_ortho$species), FUN = sum)
   
   # Get orthogroups with at least 2 samples for each species
-  nb_sp_ortho <- apply(species_without_na[, -1], 2, function(x) sum(x > 1, na.rm = T))
+  nb_sp_ortho <- apply(species_without_na[, -1], 2, function(x) sum(x >= 2, na.rm = T))
   ortho_all_sp <- names(nb_sp_ortho[which(nb_sp_ortho == length(species))])
   
   express_ortho_all_sp <- expression_ortho[,c("species", ortho_all_sp)] 
