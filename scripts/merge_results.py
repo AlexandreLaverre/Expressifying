@@ -21,7 +21,8 @@ def main(tsv_ML_list: str, tsv_Bayes_list: str, output: str):
             list_df.append(df)
     df_out = pd.concat(list_df)
     # Sort by trait, dataset, sex, logT and then method
-    df_out = df_out.sort_values(by=["ratio"], ascending=False)
+    sort_key = [i for i in ["ratio_pv", "ratio"] if i in df.columns][0]
+    df_out = df_out.sort_values(by=[sort_key], ascending=False)
     df_out.to_csv(output, sep="\t", index=False, float_format="%.3f")
 
 

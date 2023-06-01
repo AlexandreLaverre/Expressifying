@@ -1,0 +1,9 @@
+trait	nbr_taxa_pop	nbr_taxa_phy	var_within	var_between	ratio	ratio_pv	method	dataset
+Orthogroup_12317	17	17	13530.988	90871.569	6.716	1.000	Bayesian	testis
+Orthogroup_12689	19	19	12571.991	27635.783	2.198	0.999	Bayesian	cerebellum
+Orthogroup_6527	22	22	1974.814	3040.555	1.540	0.906	Bayesian	liver
+Orthogroup_8257	22	22	58788.188	73637.727	1.253	0.795	Bayesian	liver
+Orthogroup_6288	19	19	10658.344	13572.260	1.273	0.787	Bayesian	cerebellum
+Orthogroup_13206	19	19	1160.018	1419.020	1.223	0.677	Bayesian	kidney
+Orthogroup_13764	17	17	57313.765	63802.034	1.113	0.555	Bayesian	testis
+Orthogroup_13487	19	19	15834.270	14152.966	0.894	0.270	Bayesian	cerebellum
