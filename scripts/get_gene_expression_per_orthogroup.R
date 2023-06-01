@@ -4,8 +4,7 @@ tissues <- c("liver", "cerebellum", "kidney", "testis")
 
 for(tissue in tissues){
   print(tissue)
-  
-  gene.expression = readRDS(paste0(path, "data/mammals_", tissue, "_gene_expression.Rds"))
+  gene.expression = readRDS(paste0(path, "data/gene_expression/mammals_", tissue, "_gene_expression.Rds"))
   
   # Correct dog species name 
   dog_index <- which(names(gene.expression) == "Canis_lupus familiaris")
@@ -16,7 +15,7 @@ for(tissue in tissues){
   
   species = names(gene.expression)
   
-  orthogroups = read.csv(paste0(path, "data/one2one_orthogroups.csv"), row.names = 1)
+  orthogroups = read.csv(paste0(path, "data/gene_orthologies/one2one_orthogroups.csv"), row.names = 1)
   orthogroups = orthogroups[,species]
   
   # Select orthogroups with genes for all species

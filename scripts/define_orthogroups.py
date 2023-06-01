@@ -8,9 +8,9 @@ from collections import defaultdict
 import csv
 
 path = "/Users/alaverre/Documents/Expressifying/"
-species_file = path + "data/Bgee_species_names.csv"
-all_orthogroups = path + "data/all_orthogroups.csv"
-one2one_orthogroups = path + "data/one2one_orthogroups.csv"
+species_file = path + "data/Bgee_libraries/Bgee_species_names.csv"
+all_orthogroups = path + "data/gene_orthologies/all_orthogroups.csv"
+one2one_orthogroups = path + "data/gene_orthologies/one2one_orthogroups.csv"
 
 ########################################################################################################################
 # Read matching between NCBI ID and species names
@@ -29,7 +29,7 @@ print(f"Number of species: {len(all_species)}")
 ########################################################################################################################
 print("Finding all pairwise ortholog genes...")
 
-file_pattern = path + "data/OMA_pairwise_orthologs/orthologs_*.csv"
+file_pattern = path + "data/gene_orthologies/OMA_pairwise_orthologs/orthologs_*.csv"
 files = glob.glob(file_pattern)
 
 nb_pairwise = 1
@@ -64,16 +64,16 @@ G.add_edges_from(all_pairs)
 # Attribute genes to species in each orthogroup
 species_genes = {}
 nb_group = 1
-for component in nx.connected_components(G):
-    Orthogroup = defaultdict(list)
-    component_ID = "Orthogroup_" + str(nb_group)
+for orthogroup in nx.connected_components(G):
+    orthogroup_dic = defaultdict(list)
+    orthogroup_ID = "Orthogroup_" + str(nb_group)
 
-    for gene in component:
+    for gene in orthogroup:
         sp_ID, gene_ID = gene.split('-')
         sp_name = species_index[sp_ID]  # retrieve complete species name
-        Orthogroup[sp_name].append(gene_ID)
+        orthogroup_dic[sp_name].append(gene_ID)
 
-    species_genes[component_ID] = Orthogroup
+    species_genes[orthogroup_ID] = orthogroup_dic
     nb_group += 1
 
 print(f"Number of Orthogroups: {nb_group}")
@@ -90,7 +90,7 @@ with open(all_orthogroups, "w", newline="") as file_all, open(one2one_orthogroup
     writer_all.writerow(header)
     writer_one2one.writerow(header)
 
-    # Write the gene information for each connected component
+    # Write the gene information for each orthogroup
     for orthogroup, genes in species_genes.items():
         # Initialize the row with NA for all species
         row_all = [orthogroup] + ['NA'] * len(all_species)
