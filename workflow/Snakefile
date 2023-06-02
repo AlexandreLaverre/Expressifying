@@ -1,7 +1,7 @@
 import os
 
 FOLDER = os.path.abspath('.')
-BURN_IN, UNTIL = 1000, 2000
+BURN_IN, UNTIL = 100, 2000
 
 datasets = [i.split("_")[1] for i in os.listdir(f"{FOLDER}/data") if
             os.path.isfile(f"{FOLDER}/data/{i}") and i.endswith(".csv")]
@@ -104,8 +104,9 @@ rule merge_LnL:
 rule merge_Bayes:
     input:
         script=f"{FOLDER}/scripts/merge_results.py",
+        tsv_traits=expand(rules.pre_processed_traits.input.input_traits,dataset=datasets),
         tsv_Bayes=expand(rules.read_trace.output.tsv,dataset=datasets),
     output:
         tsv=f"{FOLDER}/results/merge_Bayes.tsv",
     shell:
-        'python3 {input.script} --tsv_Bayes {input.tsv_Bayes} --output {output.tsv}'
+        'python3 {input.script} --tsv_traits {input.tsv_traits} --tsv_Bayes {input.tsv_Bayes} --output {output.tsv}'

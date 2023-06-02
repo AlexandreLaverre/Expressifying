@@ -116,12 +116,11 @@ def main(input_traits: str, input_tree: str, input_var_within: str, output_tsv: 
     print("The traits found are:")
     print("\t" + "\n\t".join(traits))
     output_dict = defaultdict(list)
+    no_h2 = [f"{trait}_heritability" for trait in traits if f"{trait}_heritability" not in var_pop_df.columns]
+    df_h2 = pd.DataFrame({i: [1.0] * len(var_pop_df) for i in no_h2})
+    var_pop_df = pd.concat([var_pop_df, df_h2], axis=1)
     for trait in traits:
         print(f"\nProcessing phenotype {trait}.")
-        if f"{trait}_heritability" not in var_pop_df.columns:
-            print(f"Warning: column {trait}_heritability not found in {input_var_within}.")
-            print("Assuming heritability = 1.0.")
-            var_pop_df[f"{trait}_heritability"] = 1.0
         notna = np.isfinite(var_pop_df[f"{trait}_variance"])
         # Computing the genetic variance (geno = h² * pheno)
         genetic_variance_array = var_pop_df[f"{trait}_heritability"][notna] * var_pop_df[f"{trait}_variance"][notna]
