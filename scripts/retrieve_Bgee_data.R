@@ -4,11 +4,17 @@ library(XML)
 ################################################################################
 
 path <- "/Users/alaverre/Documents/Expressifying/"
+
+# BgeeDB functions to properly retrieve gene expression rank
 source(paste0(path, "/scripts/modified_bgee_functions.R"))
+
+# data
 species <- read.csv(paste0(path, "/data/Bgee_libraries/species_list.csv"), header=T, fill=T)
 mammals <- species[which(species$Large_Taxa == "Mammal" | species$Large_Taxa == "Marsupial" ), "complete_name"]
 #mammals[mammals != "Monodelphis_domestica"]
 
+################################################################################
+## Prepare samples to download 
 # Get numbers of experiments per IDs
 IDs <- list()
 for (sp in mammals){
@@ -77,6 +83,8 @@ for (tissu in names(species_list)){
   }
 }
 
+################################################################################
+#### Temporary graphic representations for expression score 
 sp="Bos_taurus"
 plot(gene.expression[[sp]][,1]~gene.score[[sp]][,1], cex=0.1,
      xlab="Expression score", ylab="log(TPM)", main=paste(sp, tissu, "in", colnames(gene.score[[sp]])[1]))
@@ -101,7 +109,5 @@ sd_score <- apply(gene.score[[sp]][,1:Nsample], 1, function(x) sd(x, na.rm=T))
 
 plot(sd_expression~sd_score, cex=0.1, 
      xlab="Standard Deviation Score", ylab="Standard Deviation log(TPM)", main=paste("SD across all samples in", tissu, sp))
-
-
 
 ################################################################################
