@@ -74,7 +74,7 @@ def main(path_input_traits, path_input_pS, path_input_dS, path_output_tree, path
             assert len(leaf_pS_df) == 1
             pS = float(leaf_pS_df[pS_col])
         dico_var_within["TaxonName"].append(taxa_name)
-        dico_var_within[f"pS"].append(pS)
+        dico_var_within[f"Nucleotide_diversity"].append(pS)
         dico_traits["TaxonName"].append(taxa_name)
 
     trait_list = df_traits.columns[2:]
@@ -119,7 +119,7 @@ def main(path_input_traits, path_input_pS, path_input_dS, path_output_tree, path
     df_var_within = pd.DataFrame(dico_var_within)
     df_var_within = df_var_within[df_var_within["TaxonName"].isin(set(pS_df["species"]))]
     df_var_within = df_var_within[df_var_within["TaxonName"].isin(set_taxa_names_traits)]
-    df_var_within = df_var_within[np.isfinite(df_var_within.drop(["TaxonName", "pS"], axis=1)).any(axis=1)]
+    df_var_within = df_var_within[np.isfinite(df_var_within.drop(["TaxonName", "Nucleotide_diversity"], axis=1)).any(axis=1)]
     # Write NaN for the species with no variance
     df_var_within.to_csv(path_output_var_within, sep="\t", index=False, na_rep="NaN")
 

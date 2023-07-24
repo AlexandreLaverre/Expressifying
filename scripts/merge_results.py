@@ -62,15 +62,17 @@ def main(tsv_traits_list: str, tsv_ML_list: str, tsv_Bayes_list: str, output: st
         o.write(f"\\section{{ {dataset} }} \n")
         for _, row in group_df.iterrows():
             print(row["trait"])
-            title = f"{row['trait']} in {row['dataset']} with ratio {row['ratio']:.2f}"
-            if 'ratio_pv' in row:
-                title += f" (pv={row['ratio_pv']:.3f})"
-                if row["ratio_pv"] < 0.95:
-                    continue
+            title = f"{row['trait']} in {row['dataset']} with ρ={row['ratio']:.2f}"
+            if 'pp_ratio_greater_1' in row:
+                title += f" (P[ρ>1]={row['pp_ratio_greater_1']:.3f})"
             # Boxplot of the trait grouped by the species
             gp = dataset_df[["species", row["trait"]]]
+            # Remove the species with missing values
+            print(gp)
+            gp = gp.dropna()
             # Rotate the labels on the x-axis
-            gp.boxplot(column=row["trait"], by="species", figsize=(12, 6), rot=45)
+            gp.boxplot(column=row["trait"], by="species", figsize=(12, 6))
+            plt.xticks(rotation=45, ha='right')
             plt.title(title, fontsize=20)
             plt.suptitle("")
             plt.xlabel("")

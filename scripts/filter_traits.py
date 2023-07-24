@@ -14,14 +14,20 @@ def main(input_tree, input_traits, input_var_within, neutrality_index, output_tr
     df_traits = pd.read_csv(input_traits, sep="\t")
     df_var_within = pd.read_csv(input_var_within, sep="\t")
     df_neutrality_index = pd.read_csv(neutrality_index, sep="\t")
-    df_neutrality_index = df_neutrality_index[df_neutrality_index["ratio"] > 1.0]
+    greater_than_one = (df_neutrality_index["ratio"] > 1.0)
+    if greater_than_one.sum() == 0:
+        df_neutrality_index = df_neutrality_index.sort_values(by="ratio", ascending=False)
+        # Keep the 3 first traits
+        df_neutrality_index = df_neutrality_index.iloc[:3]
+    else:
+        df_neutrality_index = df_neutrality_index[df_neutrality_index["ratio"] > 1.0]
     ortho_list = df_neutrality_index["trait"].tolist()
 
     set_taxa_names = set(tree.get_leaf_names())
     col_traits = ["TaxonName"] + [f"{i}_mean" for i in ortho_list]
     df_traits = df_traits[col_traits]
     df_traits = df_traits.dropna(subset=[f"{i}_mean" for i in ortho_list], how='all')
-    columns = ["TaxonName", "pS"] + [f"{i}_variance" for i in ortho_list]
+    columns = ["TaxonName", "Nucleotide_diversity"] + [f"{i}_variance" for i in ortho_list]
     df_var_within = df_var_within[columns]
     df_var_within = df_var_within.dropna(subset=[f"{i}_variance" for i in ortho_list], how='all')
     set_taxa_names = set_taxa_names.intersection(set(df_traits["TaxonName"].tolist()))
