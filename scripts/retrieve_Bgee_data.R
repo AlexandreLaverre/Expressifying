@@ -1,5 +1,4 @@
 library(BgeeDB)
-library(XML)
 
 ################################################################################
 
@@ -8,7 +7,7 @@ path <- "/Users/alaverre/Documents/Expressifying/"
 # BgeeDB functions to properly retrieve gene expression rank
 source(paste0(path, "/scripts/modified_bgee_functions.R"))
 
-# data
+# Species list from Tarcisio and manually annotated for "Taxa"
 species <- read.csv(paste0(path, "/data/Bgee_libraries/species_list.csv"), header=T, fill=T)
 mammals <- species[which(species$Large_Taxa == "Mammal" | species$Large_Taxa == "Marsupial" ), "complete_name"]
 #mammals[mammals != "Monodelphis_domestica"]
@@ -32,12 +31,14 @@ IDs_count <- Reduce(function(x, y) merge(x, y, by = "ID", all = TRUE), IDs)
 rownames(IDs_count) <- IDs_count$ID
 IDs_count <- IDs_count[, -1]
 
-# Counting the number of species with at least 2 experiments
-IDs_count$Nb_sp_var <- apply(IDs_count, 1, function(x) sum(x > 1, na.rm = T))
+# Counting the number of species with at least 2 libraries
+IDs_count$Nb_sp_var <- apply(IDs_count, 1, function(x) sum(x >= 2, na.rm = T))
+
+# Top tissue with maximum number of species
 IDs_count <- IDs_count[order(IDs_count$Nb_sp_var, decreasing=T),]
 head(IDs_count)
 
-# Get species list for tissues with the highest variance
+# Get species list for selected tissues (from head(IDs_count))
 liver_variance <- head(colnames(IDs_count[which(IDs_count[1,] > 1)]), -1) # UBERON:0002107 
 adult_kidney_variance <- head(colnames(IDs_count[which(IDs_count[2,] > 1)]), -1) # UBERON:0000082  
 cerebellum_variance <- head(colnames(IDs_count[which(IDs_count[3,] > 1)]), -1) #UBERON:0002037
@@ -49,7 +50,7 @@ UBERON <- c("UBERON:0002107", "UBERON:0000082", "UBERON:0002037", "UBERON:000047
 names(UBERON) <- names(species_list) 
 
 ################################################################################
-# Retrieve gene expression data for each tissue
+# Retrieve gene expression data for all species in selected tissue 
 for (tissu in names(species_list)){
   print(tissu)
   output.expression <- paste0(path, "/data/gene_expression/mammals_", tissu, "_gene_expression_logTPM.Rds")
@@ -71,6 +72,8 @@ for (tissu in names(species_list)){
       
       simplified.data <- formatData(bgee, data, callType = "present", stats = "rank")
       all_gene_rank <- simplified.data@assayData[["exprs"]]
+      
+      # New score based on rank normalized per library
       all_gene_rank_normalised <- apply(all_gene_rank, 2, function(x) 100-(x*100)/max(x, na.rm=T))
       
       # Remove genes with less than 2 measures
