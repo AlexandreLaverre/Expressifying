@@ -15,7 +15,7 @@ rule pre_processed_traits:
         script=f"{FOLDER}/scripts/pre_processed_traits.py",
         input_dS=lambda wildcards: f"{FOLDER}/data/science.abl8189.Timescale/Table_S2_RootedTrees/Concatenation_HRA_neutral_241_10miss_rooted.tree",
         input_pS=lambda wildcards: f"{FOLDER}/data/science.abn5856.Ne/science.abn5856_table_s1.csv",
-        input_traits=f"{FOLDER}/data/mammals_{{dataset}}_gene_expression_{{trait}}_orthogroups.csv",
+        input_traits=f"{FOLDER}/data/expression-datasets/mammals_{{dataset}}_gene_expression_{{trait}}_orthogroups.csv",
     output:
         tree=f"{FOLDER}/data_processed/mammals/{{dataset}}_{{trait}}.tree",
         traits=f"{FOLDER}/data_processed/mammals/{{dataset}}_{{trait}}.traits.tsv",
@@ -101,7 +101,7 @@ rule merge_LnL:
 rule merge_Bayes:
     input:
         script=f"{FOLDER}/scripts/merge_results.py",
-        tsv_traits=expand(f"{FOLDER}/data/mammals_{{dataset}}_gene_expression_{{{{trait}}}}_orthogroups.csv",dataset=datasets),
+        tsv_traits=expand(f"{FOLDER}/data/expression-datasets/mammals_{{dataset}}_gene_expression_{{{{trait}}}}_orthogroups.csv",dataset=datasets),
         tsv_Bayes=expand(f"{FOLDER}/data_processed/traces/{{dataset}}_{{{{trait}}}}.tsv",dataset=datasets),
     output:
         tsv=f"{FOLDER}/results/{{trait}}/merge_Bayes.tsv",
