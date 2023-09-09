@@ -2,6 +2,7 @@ import os
 import argparse
 import pandas as pd
 from neutrality_index import open_tree, prune_tree
+from pre_processed_traits import name_internal_nodes
 
 
 def main(input_tree, input_traits, input_var_within, neutrality_index, output_tree, output_traits, output_var_within):
@@ -19,6 +20,10 @@ def main(input_tree, input_traits, input_var_within, neutrality_index, output_tr
         df_neutrality_index = df_neutrality_index.sort_values(by="ratio", ascending=False)
         # Keep the 3 first traits
         df_neutrality_index = df_neutrality_index.iloc[:3]
+    elif greater_than_one.sum() > 30:
+        df_neutrality_index = df_neutrality_index.sort_values(by="ratio", ascending=False)
+        # Keep the 30 first traits
+        df_neutrality_index = df_neutrality_index.iloc[:30]
     else:
         df_neutrality_index = df_neutrality_index[df_neutrality_index["ratio"] > 1.0]
     ortho_list = df_neutrality_index["trait"].tolist()
@@ -27,14 +32,17 @@ def main(input_tree, input_traits, input_var_within, neutrality_index, output_tr
     col_traits = ["TaxonName"] + [f"{i}_mean" for i in ortho_list]
     df_traits = df_traits[col_traits]
     df_traits = df_traits.dropna(subset=[f"{i}_mean" for i in ortho_list], how='all')
-    columns = ["TaxonName", "Nucleotide_diversity"] + [f"{i}_variance" for i in ortho_list]
+    columns = ["TaxonName", "Nucleotide_diversity"]
+    for i in ortho_list:
+        columns += [f"{i}_variance", f"{i}_heritability_lower", f"{i}_heritability_upper"]
     df_var_within = df_var_within[columns]
-    df_var_within = df_var_within.dropna(subset=[f"{i}_variance" for i in ortho_list], how='all')
+    df_var_within = df_var_within.dropna(subset=columns, how='all')
     set_taxa_names = set_taxa_names.intersection(set(df_traits["TaxonName"].tolist()))
     tree = prune_tree(tree, list(set_taxa_names))
 
     df_traits.to_csv(output_traits, sep="\t", index=False, na_rep="NaN")
     df_var_within.to_csv(output_var_within, sep="\t", index=False, na_rep="NaN")
+    tree = name_internal_nodes(tree)
     tree.write(outfile=output_tree, format=3)
     print(f"The tree has {len(set_taxa_names)} leaves")
 

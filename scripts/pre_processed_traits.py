@@ -30,7 +30,38 @@ def name_internal_nodes(tree: Tree) -> Tree:
     return tree
 
 
-def main(path_input_traits, path_input_pS, path_input_dS, path_output_tree, path_output_traits, path_output_var_within):
+def convert_orthogroups_df_to_ensg(df_input: pd.DataFrame, path_ortho: str) -> pd.DataFrame:
+    if path_ortho == "":
+        return df_input
+    df_ortho = pd.read_csv(path_ortho, sep=",", dtype=str, na_filter=False)
+    # Rename the columns based on the df_ortho ENSG in human
+    dico_rename = {i: (j if j.startswith("ENSG") else i) for i, j in zip(df_ortho["Orthogroups"], df_ortho["Homo_sapiens"])}
+    return df_input.rename(columns=dico_rename)
+
+
+def trait_heritability(trait_list: list, path_input_heritability: str) -> (list, dict):
+    if path_input_heritability == "":
+        return trait_list, {}
+    df_h2 = pd.read_csv(path_input_heritability, sep="\t")
+    set_ensg = set(trait_list)
+    # Convert the df to a dictionary with the first column as key and row as value
+    out_dico = {}
+    for k, row in df_h2.iterrows():
+        ensg = row["GENE"]
+        if ensg not in set_ensg:
+            continue
+        h2 = row['GCTA_Sum']
+        if not np.isfinite(h2):
+            continue
+        if h2 < 0.1:
+            continue
+        h2_se = row['GCTA_Sum_SE']
+        out_dico[ensg] = (h2, h2_se)
+    return list(out_dico.keys()), out_dico
+
+
+def main(path_input_traits, path_input_orthogroups, path_input_heritability, path_input_pS, path_input_dS,
+         path_output_tree, path_output_traits, path_output_var_within):
     for path in [path_input_traits, path_input_pS, path_input_dS]:
         assert os.path.exists(path), f"Path {path} does not exist"
     for path in [path_output_tree, path_output_traits, path_output_var_within]:
@@ -54,6 +85,7 @@ def main(path_input_traits, path_input_pS, path_input_dS, path_output_tree, path
     assert len(pS_df) >= 5, "Not enough species with pS. Exiting."
 
     df_traits = pd.read_csv(path_input_traits)
+    df_traits = convert_orthogroups_df_to_ensg(df_traits, path_input_orthogroups)
     assert "species" in df_traits.columns
     print(f"The trait dataframe has {len(df_traits)} rows before filtering taxa.")
     df_traits = df_traits[df_traits["species"].isin(set_taxa_names)]
@@ -72,12 +104,15 @@ def main(path_input_traits, path_input_pS, path_input_dS, path_output_tree, path
             pS = np.nan
         else:
             assert len(leaf_pS_df) == 1
-            pS = float(leaf_pS_df[pS_col])
+            pS = float(leaf_pS_df[pS_col].iloc[0])
         dico_var_within["TaxonName"].append(taxa_name)
         dico_var_within[f"Nucleotide_diversity"].append(pS)
         dico_traits["TaxonName"].append(taxa_name)
 
     trait_list = df_traits.columns[2:]
+    print(f"The trait dataframe has {len(trait_list)} traits before filtering heritability.")
+    trait_list, heritability_dico = trait_heritability(trait_list, path_input_heritability)
+    print(f"The trait dataframe has {len(trait_list)} traits after filtering heritability.")
     for trait in trait_list:
         trait_name = trait.replace(" ", "_").replace("(", "").replace(")", "")
         print(f"\nPhenotype considered is {trait}")
@@ -93,9 +128,17 @@ def main(path_input_traits, path_input_pS, path_input_dS, path_output_tree, path
         for taxa_name in set_taxa_names:
             if taxa_name in var_grouped:
                 phenotype_var = np.var(var_grouped[taxa_name][trait], ddof=1)
+                if trait_name in heritability_dico:
+                    h2_mean, h2_std = heritability_dico[trait_name]
+                    h2_min, h2_max = max(0.0, h2_mean - h2_std), min(1.0, h2_mean + h2_std)
+                else:
+                    h2_min, h2_max = 1.0, 1.0
             else:
                 phenotype_var = np.nan
+                h2_min, h2_max = np.nan, np.nan
             dico_var_within[f"{trait_name}_variance"].append(phenotype_var)
+            dico_var_within[f"{trait_name}_heritability_lower"].append(h2_min)
+            dico_var_within[f"{trait_name}_heritability_upper"].append(h2_max)
         assert len(set_taxa_names) == len(dico_var_within[f"{trait_name}_variance"])
         print(f"{len(var_grouped)} species with variance computed.")
 
@@ -131,16 +174,20 @@ def main(path_input_traits, path_input_pS, path_input_dS, path_output_tree, path
     print(f"The final tree has {len(tree.get_leaves())} taxa.")
     tree_length = sum([node.dist for node in tree.traverse()])
     print(f"The tree length is {tree_length}.")
+    tree = name_internal_nodes(tree)
     tree.write(outfile=path_output_tree, format=3)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("--input_traits", help="Input trait file", required=True)
+    parser.add_argument("--input_orthogroups", help="Input orthogroups file", required=False, default="")
+    parser.add_argument("--input_heritability", help="Input heritability file", required=False, default="")
     parser.add_argument("--input_pS", help="Input pS file", required=True)
     parser.add_argument("--input_dS", help="Input dS tree file", required=True)
     parser.add_argument("--output_tree", help="Output tree file", required=True)
     parser.add_argument("--output_traits", help="Output traits file", required=True)
     parser.add_argument('--output_var_within', help="Output var_within file", required=True)
     args = parser.parse_args()
-    main(args.input_traits, args.input_pS, args.input_dS, args.output_tree, args.output_traits, args.output_var_within)
+    main(args.input_traits, args.input_orthogroups, args.input_heritability, args.input_pS, args.input_dS,
+         args.output_tree, args.output_traits, args.output_var_within)

@@ -1,13 +1,13 @@
 import os
 
 FOLDER = os.path.abspath('.')
-BURN_IN, UNTIL = 500, 2000
+BURN_IN, UNTIL = 500, 1000
 
 datasets = ['cerebellum', 'kidney', 'liver', 'testis']
 
 
 rule all:
-    input: expand(f"{FOLDER}/results/{{trait}}/merge_{{method}}.tsv",method=["LnL", "Bayes"],trait=['score', 'logTPM'])
+    input: expand(f"{FOLDER}/results/{{trait}}/merge_{{method}}.tsv", method=["LnL", "Bayes"], trait=['logTPM', "score"])
 
 
 rule pre_processed_traits:
@@ -16,16 +16,20 @@ rule pre_processed_traits:
         input_dS=lambda wildcards: f"{FOLDER}/data/science.abl8189.Timescale/Table_S2_RootedTrees/Concatenation_HRA_neutral_241_10miss_rooted.tree",
         input_pS=lambda wildcards: f"{FOLDER}/data/science.abn5856.Ne/science.abn5856_table_s1.csv",
         input_traits=f"{FOLDER}/data/expression-datasets/mammals_{{dataset}}_gene_expression_{{trait}}_orthogroups.csv",
+        input_orthogroups=f"{FOLDER}/data/one2one_orthogroups.csv",
+        input_heritability=f"{FOLDER}/data/heritability-gene-expression/41431_2019_511_MOESM2_ESM.tsv"
     output:
         tree=f"{FOLDER}/data_processed/mammals/{{dataset}}_{{trait}}.tree",
         traits=f"{FOLDER}/data_processed/mammals/{{dataset}}_{{trait}}.traits.tsv",
         var_within=f"{FOLDER}/data_processed/mammals/{{dataset}}_{{trait}}.var_within.tsv"
     log:
         stdout=f"{FOLDER}/data_processed/mammals/{{dataset}}_{{trait}}.preprocessed.log"
+    params:
+        heritability=lambda wildcards, input, output: f"--input_heritability {input.input_heritability} " if wildcards.trait == "logTPM" else ""
     shell:
-        'python3 {input.script} --input_dS {input.input_dS} --input_pS {input.input_pS}'
-        ' --input_traits {input.input_traits} --output_tree {output.tree} --output_traits {output.traits}'
-        ' --output_var_within {output.var_within} > {log.stdout}'
+        'python3 {input.script} --input_dS {input.input_dS} --input_pS {input.input_pS} '
+        '--input_traits {input.input_traits} --input_orthogroups {input.input_orthogroups} {params.heritability}'
+        '--output_tree {output.tree} --output_traits {output.traits} --output_var_within {output.var_within} > {log.stdout}'
 
 rule neutrality_index:
     input:
@@ -103,7 +107,8 @@ rule merge_Bayes:
         script=f"{FOLDER}/scripts/merge_results.py",
         tsv_traits=expand(f"{FOLDER}/data/expression-datasets/mammals_{{dataset}}_gene_expression_{{{{trait}}}}_orthogroups.csv",dataset=datasets),
         tsv_Bayes=expand(f"{FOLDER}/data_processed/traces/{{dataset}}_{{{{trait}}}}.tsv",dataset=datasets),
+        input_orthogroups=f"{FOLDER}/data/one2one_orthogroups.csv",
     output:
         tsv=f"{FOLDER}/results/{{trait}}/merge_Bayes.tsv",
     shell:
-        'python3 {input.script} --tsv_traits {input.tsv_traits} --tsv_Bayes {input.tsv_Bayes} --output {output.tsv}'
+        'python3 {input.script} --input_orthogroups {input.input_orthogroups} --tsv_traits {input.tsv_traits} --tsv_Bayes {input.tsv_Bayes} --output {output.tsv}'
