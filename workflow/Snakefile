@@ -121,9 +121,9 @@ rule merge_results:
         'python3 {input.script} --tsv_results {input.tsv_results} --output {output.tsv}'
 
 
-rule plot_results:
+rule plot_boxplots:
     input:
-        script=f"{FOLDER}/scripts/plot_results.py",
+        script=f"{FOLDER}/scripts/plot_boxplots.py",
         tsv_traits=expand(f"{FOLDER}/data/expression-datasets/mammals_{{dataset}}_gene_expression_{{{{trait}}}}_orthogroups.csv",dataset=datasets),
         tsv_Bayes=f"{FOLDER}/results/{{trait}}/merge_Bayes.tsv",
         input_orthogroups=f"{FOLDER}/data/one2one_orthogroups.csv",
