@@ -68,12 +68,12 @@ def main(tsv_traits_list: str, tsv_Bayes: str, input_orthogroups: str, output_pd
             plt.suptitle("")
             plt.xlabel("")
             plt.tight_layout()
-            output_pdf = f"{folder_plots}/{row['dataset']}_{row['trait']}.pdf"
-            plt.savefig(output_pdf)
+            output_box = f"{folder_plots}/{row['dataset']}_{row['trait']}.pdf"
+            plt.savefig(output_box)
             plt.close("all")
             plt.clf()
             o.write(f"\\subsection{{ {row['trait'].replace('_', ' ')} }} \n")
-            o.write(f"\\includegraphics[width=\\linewidth, page=1]{{ {output_pdf} }} \n\n")
+            o.write(f"\\includegraphics[width=\\linewidth, page=1]{{ {output_box} }} \n\n")
         o.write("\\\\ \n")
     o.write(postamble)
     o.close()

@@ -9,8 +9,8 @@ traits = ['logTPM', 'score']
 
 rule all:
     input:
-        expand(f"{FOLDER}/results/{{trait}}/merge_{{method}}.tsv",method=["LnL", "Bayes"],trait=traits),
-        expand(f"{FOLDER}/results/{{trait}}/merged_boxplot_{{trait}}.pdf",trait=traits)
+        expand(f"{FOLDER}/results/{{trait}}/merged_boxplot_{{trait}}.pdf",trait=traits),
+        expand(f"{FOLDER}/results/{{trait}}/corr_scatter_{{method}}_{{trait}}.pdf",method=["LnL", "Bayes"],trait=traits)
 
 rule pre_processed_traits:
     input:
@@ -131,3 +131,13 @@ rule plot_boxplots:
         tsv=f"{FOLDER}/results/{{trait}}/merged_boxplot_{{trait}}.pdf",
     shell:
         'python3 {input.script} --input_orthogroups {input.input_orthogroups} --tsv_traits {input.tsv_traits} --tsv_Bayes {input.tsv_Bayes} --output {output.tsv}'
+
+
+rule plot_corr:
+    input:
+        script=f"{FOLDER}/scripts/plot_corr.py",
+        tsv_Bayes=f"{FOLDER}/results/{{trait}}/merge_{{method}}.tsv"
+    output:
+        tsv=f"{FOLDER}/results/{{trait}}/corr_scatter_{{method}}_{{trait}}.pdf"
+    shell:
+        'python3 {input.script} --input {input.tsv_Bayes} --output {output.tsv}'
