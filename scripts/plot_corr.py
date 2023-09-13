@@ -29,7 +29,7 @@ def main(tsv_input: str, output_pdf: str):
                 continue
             corr = joint_df["ratio_1"].corr(joint_df["ratio_2"])
             pp, pp_val, pp_label = ("ratio", 1.0, "ρ")
-            if "pp_ratio_greater_1" in joint_df.columns:
+            if "pp_ratio_greater_1" in df_1.columns and "pp_ratio_greater_1" in df_2.columns:
                 pp, pp_val, pp_label = ("pp_ratio_greater_1", 0.95, "pp")
 
             for i in [1, 2]:
