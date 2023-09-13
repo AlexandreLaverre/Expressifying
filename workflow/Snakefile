@@ -1,14 +1,16 @@
 import os
 
 FOLDER = os.path.abspath('.')
-BURN_IN, UNTIL = 500, 1000
+BURN_IN, UNTIL = 1000, 2000
 
 datasets = ['cerebellum', 'kidney', 'liver', 'testis']
+traits = ['logTPM', 'score']
 
 
 rule all:
-    input: expand(f"{FOLDER}/results/{{trait}}/merge_{{method}}.tsv", method=["LnL", "Bayes"], trait=['logTPM', "score"])
-
+    input:
+        expand(f"{FOLDER}/results/{{trait}}/merge_{{method}}.tsv",method=["LnL", "Bayes"],trait=traits),
+        expand(f"{FOLDER}/results/{{trait}}/merged_boxplot_{{trait}}.pdf",trait=traits)
 
 rule pre_processed_traits:
     input:
@@ -38,14 +40,15 @@ rule neutrality_index:
         traits=rules.pre_processed_traits.output.traits,
         var_within=rules.pre_processed_traits.output.var_within
     output:
-        tsv=f"{FOLDER}/data_processed/ML/{{dataset}}_{{trait}}.tsv"
+        tsv=f"{FOLDER}/data_processed/LnL/{{dataset}}_{{trait}}.tsv"
     log:
-        stdout=f"{FOLDER}/data_processed/ML/{{dataset}}_{{trait}}.processed.log"
+        stdout=f"{FOLDER}/data_processed/LnL/{{dataset}}_{{trait}}.processed.log"
     shell:
         'python3 {input.script} --tree {input.tree} --traits {input.traits} --var_within {input.var_within}'
         ' --output {output.tsv} > {log.stdout}'
 
-rule filter_traits:
+
+checkpoint filter_traits:
     input:
         script=f"{FOLDER}/scripts/filter_traits.py",
         tree=rules.pre_processed_traits.output.tree,
@@ -53,62 +56,78 @@ rule filter_traits:
         var_within=rules.pre_processed_traits.output.var_within,
         neutrality_index=rules.neutrality_index.output.tsv
     output:
-        tree=f"{FOLDER}/data_processed/mammals/{{dataset}}_{{trait}}.filter.tree",
-        traits=f"{FOLDER}/data_processed/mammals/{{dataset}}_{{trait}}.filter.traits.tsv",
-        var_within=f"{FOLDER}/data_processed/mammals/{{dataset}}_{{trait}}.filter.var_within.tsv"
+        dir=directory(f"{FOLDER}/data_processed/filtered/{{dataset}}_{{trait}}"),
     log:
-        stdout=f"{FOLDER}/data_processed/mammals/{{dataset}}_{{trait}}.filter.preprocessed.log"
+        stdout=f"{FOLDER}/data_processed/filtered/{{dataset}}_{{trait}}.preprocessed.log"
     shell:
         'python3 {input.script} --input_tree {input.tree} --input_traits {input.traits} --input_var_within {input.var_within} --neutrality_index {input.neutrality_index}'
-        ' --output_tree {output.tree} --output_traits {output.traits} --output_var_within {output.var_within} > {log.stdout}'
+        ' --output_dir {output.dir} > {log.stdout}'
 
 
 rule run_inference:
     input:
         exec=f"{FOLDER}/utils/BayesCode/bin/nodetraits",
-        traits=rules.filter_traits.output.traits,
-        tree=rules.filter_traits.output.tree
+        traits=f"{FOLDER}/data_processed/filtered/{{dataset}}_{{trait}}/{{gene}}.traits.tsv",
+        tree=f"{FOLDER}/data_processed/filtered/{{dataset}}_{{trait}}/{{gene}}.tree"
     output:
-        run=f"{FOLDER}/data_processed/inference/{{dataset}}_{{trait}}.run",
+        run=f"{FOLDER}/data_processed/inference/{{dataset}}_{{trait}}/{{gene}}.run",
     params:
-        chain=f"{FOLDER}/data_processed/inference/{{dataset}}_{{trait}}",
+        chain=f"{FOLDER}/data_processed/inference/{{dataset}}_{{trait}}/{{gene}}",
         until=f"--until {UNTIL}",
     log:
-        stdout=f"{FOLDER}/data_processed/inference/{{dataset}}_{{trait}}.log"
+        stdout=f"{FOLDER}/data_processed/inference/{{dataset}}_{{trait}}/{{gene}}.log"
     shell:
         '{input.exec} {params.until} --uniq_kappa --df 1 --tree {input.tree} --traitsfile {input.traits} {params.chain} > {log.stdout} '
+
 
 rule read_trace:
     input:
         exec=f"{FOLDER}/utils/BayesCode/bin/readnodetraits",
-        inference=rules.run_inference.output.run,
-        var_within=rules.filter_traits.output.var_within
+        inference=f"{FOLDER}/data_processed/inference/{{dataset}}_{{trait}}/{{gene}}.run",
+        var_within=f"{FOLDER}/data_processed/filtered/{{dataset}}_{{trait}}/{{gene}}.var_within.tsv"
     output:
-        tsv=f"{FOLDER}/data_processed/traces/{{dataset}}_{{trait}}.tsv",
+        tsv=f"{FOLDER}/data_processed/Bayes/{{dataset}}_{{trait}}/{{gene}}.tsv",
     params:
         points=f"--burnin {BURN_IN} --until {UNTIL}",
-        chain=lambda wildcards: f"{FOLDER}/data_processed/inference/{wildcards.dataset}_{wildcards.trait}"
+        chain=lambda wildcards: f"{FOLDER}/data_processed/inference/{wildcards.dataset}_{wildcards.trait}/{wildcards.gene}"
     log:
-        stdout=f"{FOLDER}/data_processed/traces/{{dataset}}_{{trait}}.trace.log"
+        stdout=f"{FOLDER}/data_processed/Bayes/{{dataset}}_{{trait}}/{{gene}}.trace.log"
     shell:
         '{input.exec} {params.points} --var_within {input.var_within} --output {output.tsv} {params.chain} > {log.stdout} && gzip -f {params.chain}.chain && gzip -f {params.chain}.trace'
 
-rule merge_LnL:
-    input:
-        script=f"{FOLDER}/scripts/merge_results.py",
-        tsv_ML=expand(f"{FOLDER}/data_processed/ML/{{dataset}}_{{{{trait}}}}.tsv",dataset=datasets),
-    output:
-        tsv=f"{FOLDER}/results/{{trait}}/merge_LnL.tsv",
-    shell:
-        'python3 {input.script} --tsv_ML {input.tsv_ML} --output {output.tsv}'
 
-rule merge_Bayes:
+def aggregate_input(wildcards):
+    checkpoint_output = checkpoints.filter_traits.get(**wildcards).output[0]
+    return expand(f"{FOLDER}/data_processed/Bayes/{{dataset}}_{{trait}}/{{gene}}.tsv",dataset=wildcards.dataset,trait=wildcards.trait,gene=glob_wildcards(os.path.join(checkpoint_output,"{gene}.tree")).gene)
+
+
+rule merge_traces:
+    input: aggregate_input
+    output:
+        tsv=f"{FOLDER}/data_processed/Bayes/{{dataset}}_{{trait}}.tsv",
+    params:
+        traces=f"{FOLDER}/data_processed/Bayes/{{dataset}}_{{trait}}"
+    shell:
+        'python3 {FOLDER}/scripts/merge_traces.py --input {params.traces} --output {output.tsv}'
+
+
+rule merge_results:
     input:
         script=f"{FOLDER}/scripts/merge_results.py",
+        tsv_results=expand(f"{FOLDER}/data_processed/{{{{method}}}}/{{dataset}}_{{{{trait}}}}.tsv",dataset=datasets),
+    output:
+        tsv=f"{FOLDER}/results/{{trait}}/merge_{{method}}.tsv",
+    shell:
+        'python3 {input.script} --tsv_results {input.tsv_results} --output {output.tsv}'
+
+
+rule plot_results:
+    input:
+        script=f"{FOLDER}/scripts/plot_results.py",
         tsv_traits=expand(f"{FOLDER}/data/expression-datasets/mammals_{{dataset}}_gene_expression_{{{{trait}}}}_orthogroups.csv",dataset=datasets),
-        tsv_Bayes=expand(f"{FOLDER}/data_processed/traces/{{dataset}}_{{{{trait}}}}.tsv",dataset=datasets),
+        tsv_Bayes=f"{FOLDER}/results/{{trait}}/merge_Bayes.tsv",
         input_orthogroups=f"{FOLDER}/data/one2one_orthogroups.csv",
     output:
-        tsv=f"{FOLDER}/results/{{trait}}/merge_Bayes.tsv",
+        tsv=f"{FOLDER}/results/{{trait}}/merged_boxplot_{{trait}}.pdf",
     shell:
         'python3 {input.script} --input_orthogroups {input.input_orthogroups} --tsv_traits {input.tsv_traits} --tsv_Bayes {input.tsv_Bayes} --output {output.tsv}'
