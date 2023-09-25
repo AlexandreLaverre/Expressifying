@@ -5,19 +5,22 @@ BURN_IN, UNTIL = 1000, 2000
 
 datasets = ['cerebellum', 'kidney', 'liver', 'testis']
 traits = ['logTPM', 'score']
-
+# data = "orthogroups_EVE_filtered"
+data = "orthogroups"
 
 rule all:
     input:
         expand(f"{FOLDER}/results/{{trait}}/merged_boxplot_{{trait}}.pdf",trait=traits),
-        expand(f"{FOLDER}/results/{{trait}}/corr_scatter_{{method}}_{{trait}}.pdf",method=["LnL", "Bayes"],trait=traits)
+        expand(f"{FOLDER}/results/{{trait}}/corr_scatter_{{method}}_{{trait}}.pdf",method=["LnL",
+                                                                                           "Bayes"],trait=traits),
+        expand(f"{FOLDER}/results/{{trait}}/trait_sequence_corr_Bayes_{{trait}}.pdf",trait=traits)
 
 rule pre_processed_traits:
     input:
         script=f"{FOLDER}/scripts/pre_processed_traits.py",
         input_dS=lambda wildcards: f"{FOLDER}/data/science.abl8189.Timescale/Table_S2_RootedTrees/Concatenation_HRA_neutral_241_10miss_rooted.tree",
         input_pS=lambda wildcards: f"{FOLDER}/data/science.abn5856.Ne/science.abn5856_table_s1.csv",
-        input_traits=f"{FOLDER}/data/expression-datasets/mammals_{{dataset}}_gene_expression_{{trait}}_orthogroups.csv",
+        input_traits=f"{FOLDER}/data/expression-datasets/mammals_{{dataset}}_gene_expression_{{trait}}_{data}.csv",
         input_orthogroups=f"{FOLDER}/data/one2one_orthogroups.csv",
         input_heritability=f"{FOLDER}/data/heritability-gene-expression/41431_2019_511_MOESM2_ESM.tsv"
     output:
@@ -27,7 +30,8 @@ rule pre_processed_traits:
     log:
         stdout=f"{FOLDER}/data_processed/mammals/{{dataset}}_{{trait}}.preprocessed.log"
     params:
-        heritability=lambda wildcards, input, output: f"--input_heritability {input.input_heritability} " if wildcards.trait == "logTPM" else ""
+        heritability=lambda wildcards, input, output: f"--input_heritability {input.input_heritability} " if wildcards.trait in [
+            "logTPM", "log2TPM"] else ""
     shell:
         'python3 {input.script} --input_dS {input.input_dS} --input_pS {input.input_pS} '
         '--input_traits {input.input_traits} --input_orthogroups {input.input_orthogroups} {params.heritability}'
@@ -124,7 +128,7 @@ rule merge_results:
 rule plot_boxplots:
     input:
         script=f"{FOLDER}/scripts/plot_boxplots.py",
-        tsv_traits=expand(f"{FOLDER}/data/expression-datasets/mammals_{{dataset}}_gene_expression_{{{{trait}}}}_orthogroups.csv",dataset=datasets),
+        tsv_traits=expand(f"{FOLDER}/data/expression-datasets/mammals_{{dataset}}_gene_expression_{{{{trait}}}}_{data}.csv",dataset=datasets),
         tsv_Bayes=f"{FOLDER}/results/{{trait}}/merge_Bayes.tsv",
         input_orthogroups=f"{FOLDER}/data/one2one_orthogroups.csv",
     output:
@@ -141,3 +145,13 @@ rule plot_corr:
         tsv=f"{FOLDER}/results/{{trait}}/corr_scatter_{{method}}_{{trait}}.pdf"
     shell:
         'python3 {input.script} --input {input.tsv_Bayes} --output {output.tsv}'
+
+rule trait_sequence_corr:
+    input:
+        script=f"{FOLDER}/scripts/trait_sequence_corr.py",
+        tsv_Bayes=f"{FOLDER}/results/{{trait}}/merge_{{method}}.tsv",
+        gene_table=f"{FOLDER}/data/adaptation/GeneTable.tsv"
+    output:
+        tsv=f"{FOLDER}/results/{{trait}}/trait_sequence_corr_{{method}}_{{trait}}.pdf"
+    shell:
+        'python3 {input.script} --input {input.tsv_Bayes} --gene_table {input.gene_table} --output {output.tsv}'

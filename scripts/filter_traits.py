@@ -14,13 +14,13 @@ def main(input_tree, input_traits, input_var_within, neutrality_index, output_di
     df_traits = pd.read_csv(input_traits, sep="\t")
     df_var_within = pd.read_csv(input_var_within, sep="\t")
     df_neutrality_index = pd.read_csv(neutrality_index, sep="\t")
+    df_neutrality_index = df_neutrality_index.sort_values(by="ratio", ascending=False)
     greater_than_one = (df_neutrality_index["ratio"] > 1.0)
     if greater_than_one.sum() == 0:
-        df_neutrality_index = df_neutrality_index.sort_values(by="ratio", ascending=False)
         # Keep the 3 first traits
         df_neutrality_index = df_neutrality_index.iloc[:3]
     else:
-        df_neutrality_index = df_neutrality_index[df_neutrality_index["ratio"] > 1.0]
+        df_neutrality_index = df_neutrality_index[greater_than_one]
 
     ortho_list = df_neutrality_index["trait"].tolist()
     set_taxa_names = set(tree.get_leaf_names())

@@ -17,7 +17,7 @@ def main(tsv_input: str, output_pdf: str):
             df_1 = df_out[df_out["dataset"] == data_1]
             df_2 = df_out[df_out["dataset"] == data_2]
             joint_df = pd.merge(df_1, df_2, on="trait", suffixes=("_1", "_2"), how="inner")
-            ax = axs[x_1, x_2]
+            ax = axs[x_1, x_2] if len(datasets) > 1 else axs
             ax.set_xlabel(f"{data_1} ratio")
             ax.set_ylabel(f"{data_2} ratio")
             # vertical line and horizontal line for 1

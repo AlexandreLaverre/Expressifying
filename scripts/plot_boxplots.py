@@ -41,6 +41,8 @@ def main(tsv_traits_list: str, tsv_Bayes: str, input_orthogroups: str, output_pd
     os.makedirs(folder_plots, exist_ok=True)
     os.makedirs(output_dir, exist_ok=True)
     df_out = pd.read_csv(tsv_Bayes, sep='\t')
+    if "pp_ratio_greater_1" in df_out.columns:
+        df_out = df_out[df_out["pp_ratio_greater_1"] > 0.95]
     output_tex = replace_last(output_pdf, '.pdf', '.tex')
     o = open(output_tex, 'w')
     o.write(preamble)
