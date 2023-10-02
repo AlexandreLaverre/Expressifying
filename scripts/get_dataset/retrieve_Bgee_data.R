@@ -5,7 +5,7 @@ library(BgeeDB)
 path <- "/Users/alaverre/Documents/Expressifying/"
 
 # BgeeDB functions to properly retrieve gene expression rank
-source(paste0(path, "/scripts/modified_bgee_functions.R"))
+source(paste0(path, "/scripts/get_dataset/modified_bgee_functions.R"))
 
 # Species list from Tarcisio and manually annotated for "Taxa"
 species <- read.csv(paste0(path, "/data/Bgee_libraries/species_list.csv"), header=T, fill=T)
@@ -14,15 +14,14 @@ mammals <- species[which(species$Large_Taxa == "Mammal" | species$Large_Taxa == 
 
 ################################################################################
 ## Prepare samples to download 
-# Get numbers of experiments per IDs
+# Get numbers of experiments per UBERON IDs
 IDs <- list()
 for (sp in mammals){
   bgee <- Bgee$new(species=sp, dataType = "rna_seq", pathToData=paste0(path, "/data/Bgee_libraries/"))
+  annotation_samp <- getAnnotation(bgee)$sample.annotation
+  annotation_samp$ID <- paste(annotation_samp$Anatomical.entity.name, annotation_samp$Anatomical.entity.ID, annotation_samp$Sex)
   
-  annotation_bgee <- getAnnotation(bgee)$sample.annotation
-  annotation_bgee$ID <- paste(annotation_bgee$Anatomical.entity.name, annotation_bgee$Anatomical.entity.ID)
-  
-  IDs[[sp]] <- as.data.frame(table(annotation_bgee$ID))
+  IDs[[sp]] <- as.data.frame(table(annotation_samp$ID))
   colnames(IDs[[sp]]) <- c("ID", sp)
 }
 
@@ -36,7 +35,7 @@ IDs_count$Nb_sp_var <- apply(IDs_count, 1, function(x) sum(x >= 2, na.rm = T))
 
 # Top tissue with maximum number of species
 IDs_count <- IDs_count[order(IDs_count$Nb_sp_var, decreasing=T),]
-head(IDs_count)
+head(IDs_count[,c(1,28)])
 
 # Get species list for selected tissues (from head(IDs_count))
 liver_variance <- head(colnames(IDs_count[which(IDs_count[1,] > 1)]), -1) # UBERON:0002107 
@@ -47,13 +46,13 @@ testis_variance  <- head(colnames(IDs_count[which(IDs_count[4,] > 1)]), -1) # UB
 species_list <- list(liver_variance, adult_kidney_variance, cerebellum_variance, testis_variance)
 names(species_list) <- c("liver", "kidney", "cerebellum", "testis")
 UBERON <- c("UBERON:0002107", "UBERON:0000082", "UBERON:0002037", "UBERON:0000473")
-names(UBERON) <- names(species_list) 
+names(UBERON) <- c("liver", "kidney", "cerebellum", "testis") 
 
 ################################################################################
 # Retrieve gene expression data for all species in selected tissue 
 for (tissu in names(species_list)){
   print(tissu)
-  output.expression <- paste0(path, "/data/gene_expression/mammals_", tissu, "_gene_expression_logTPM.Rds")
+  output.expression <- paste0(path, "/data/gene_expression/mammals_", tissu, "_gene_expression_log2TPM.Rds")
   output.score <- paste0(path, "/data/gene_expression/mammals_", tissu, "_gene_expression_score.Rds")
   
   if (file.exists(output.expression)){
@@ -66,9 +65,10 @@ for (tissu in names(species_list)){
       print(sp)
       bgee <- Bgee$new(species=sp, dataType = "rna_seq", pathToData=paste0(path, "/data/Bgee_libraries/"))
       data <- getData(bgee, anatEntityId = UBERON[[tissu]])
+      
       data$Rank <- as.numeric(data$Rank)
       simplified.data <- formatData(bgee, data, callType = "present", stats = "tpm")
-      all_gene_expression <- log(simplified.data@assayData[["exprs"]])
+      all_gene_expression <- log2(0.01+simplified.data@assayData[["exprs"]])
       
       simplified.data <- formatData(bgee, data, callType = "present", stats = "rank")
       all_gene_rank <- simplified.data@assayData[["exprs"]]
@@ -85,32 +85,5 @@ for (tissu in names(species_list)){
     saveRDS(gene.score, file=output.score)
   }
 }
-
-################################################################################
-#### Temporary graphic representations for expression score 
-sp="Bos_taurus"
-plot(gene.expression[[sp]][,1]~gene.score[[sp]][,1], cex=0.1,
-     xlab="Expression score", ylab="log(TPM)", main=paste(sp, tissu, "in", colnames(gene.score[[sp]])[1]))
-
-par(mfrow=c(2,1))
-par(mai=c(0.4,0.8,0.3,0.3), mgp=c(2.2,0.8,0))
-boxplot(t(gene.expression[[sp]][1:20,]), outline=F, 
-        ylab="log(TPM)", las=1, main="20 genes in liver Bos_taurus")
-boxplot(t(gene.score[[sp]][1:20,]), outline=F,
-        ylab="Score", las=1, main="")
-
-Nsample = length(colnames(gene.expression[[sp]]))
-median_expression <- apply(gene.expression[[sp]][,1:Nsample], 1, function(x) median(log(x), na.rm=T))
-median_score <- apply(gene.score[[sp]][,1:Nsample], 1, function(x) median(x, na.rm=T))
-
-plot(median_expression~median_score, cex=0.1, 
-     xlab="Median score", ylab="median log(TPM)", main=paste("Median across all samples in", tissu, sp))
-
-# SD
-sd_expression <- apply(gene.expression[[sp]][,1:Nsample], 1, function(x) sd(log(x), na.rm=T))
-sd_score <- apply(gene.score[[sp]][,1:Nsample], 1, function(x) sd(x, na.rm=T))
-
-plot(sd_expression~sd_score, cex=0.1, 
-     xlab="Standard Deviation Score", ylab="Standard Deviation log(TPM)", main=paste("SD across all samples in", tissu, sp))
 
 ################################################################################

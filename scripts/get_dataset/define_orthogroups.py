@@ -8,9 +8,9 @@ from collections import defaultdict
 import csv
 
 path = "/Users/alaverre/Documents/Expressifying/"
-species_file = path + "data/Bgee_libraries/Bgee_species_names.csv"
-all_orthogroups = path + "data/gene_orthologies/all_orthogroups.csv"
-one2one_orthogroups = path + "data/gene_orthologies/one2one_orthogroups.csv"
+species_file = path + "data/Bgee_libraries/species_list.csv"
+all_orthogroups = path + "data/gene_orthologies/all_orthogroups_2022_mammals.csv"
+one2one_orthogroups = path + "data/gene_orthologies/one2one_orthogroups_2022_mammals.csv"
 
 ########################################################################################################################
 # Read matching between NCBI ID and species names
@@ -19,17 +19,19 @@ with open(species_file, "r") as match_file:
     reader = csv.reader(match_file)
     next(reader)  # Skip the header row
     for row in reader:
-        NCBI_ID = row[0]
-        sp_name = row[1].replace(" ", "_")
-        species_index[NCBI_ID] = sp_name
+        if row[11] in ["Mammal", "Marsupial"]:
+            NCBI_ID = row[0]
+            #sp_name = row[1].replace(" ", "_")
+            sp_name = row[9].replace(" ", "_")
+            species_index[NCBI_ID] = sp_name
 
-all_species = species_index.values()
+all_species = species_index.keys()
 print(f"Number of species: {len(all_species)}")
 
 ########################################################################################################################
 print("Finding all pairwise ortholog genes...")
 
-file_pattern = path + "data/gene_orthologies/OMA_pairwise_orthologs/orthologs_*.csv"
+file_pattern = path + "data/gene_orthologies/Bgee-OMA-orthologs-Nov2022/orthologs_*.csv"
 files = glob.glob(file_pattern)
 
 nb_pairwise = 1
@@ -41,16 +43,17 @@ for file in files:
     ref_sp = species_names[0]
     tg_sp = species_names[1]
 
-    df = pd.read_csv(file)
+    if ref_sp in all_species and tg_sp in all_species:
+        df = pd.read_csv(file)
 
-    # Edit gene names to integrate species ID
-    df['gene1'] = ref_sp + '-' + df['gene1'].astype(str)
-    df['gene2'] = tg_sp + '-' + df['gene2'].astype(str)
+        # Edit gene names to integrate species ID
+        df['gene1'] = ref_sp + '-' + df['gene1'].astype(str)
+        df['gene2'] = tg_sp + '-' + df['gene2'].astype(str)
 
-    # Combine columns to create the list of tuples IDs
-    ids = list(zip(df['gene1'], df['gene2']))
-    all_pairs.extend(ids)
-    nb_pairwise += 1
+        # Combine columns to create the list of tuples IDs
+        ids = list(zip(df['gene1'], df['gene2']))
+        all_pairs.extend(ids)
+        nb_pairwise += 1
 
 print(f"Number of pairwise files analyzed: {nb_pairwise}")
 print(f"Total number of gene pairs: {len(all_pairs)}")
@@ -86,7 +89,7 @@ with open(all_orthogroups, "w", newline="") as file_all, open(one2one_orthogroup
     writer_one2one = csv.writer(file_one2one)
 
     # Write the header row
-    header = ['Orthogroups'] + list(all_species)
+    header = ['Orthogroups'] + list(species_index.values())
     writer_all.writerow(header)
     writer_one2one.writerow(header)
 

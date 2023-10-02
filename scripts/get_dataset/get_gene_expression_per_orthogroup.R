@@ -1,15 +1,15 @@
 library(progress)
 path = "/Users/alaverre/Documents/Expressifying/"
 
-all_orthogroups = read.csv(paste0(path, "data/gene_orthologies/one2one_orthogroups.csv"), row.names = 1)
-tissues <- c("testis", "kidney", "cerebellum")
-min_species=15
+all_orthogroups = read.csv(paste0(path, "data/gene_orthologies/one2one_orthogroups_2022_mammals.csv"), row.names = 1)
+tissues <- c("adult_mammalian_kidney_male", "liver_female", "liver_male", "testis_male")
+min_species=10
 
 for(tissue in tissues){
   print(tissue)
   
-  gene.expression = readRDS(paste0(path, "data/gene_expression/mammals_", tissue, "_gene_expression_logTPM.Rds"))
-  gene.score = readRDS(paste0(path, "data/gene_expression/mammals_", tissue, "_gene_expression_score.Rds"))
+  gene.expression = readRDS(paste0(path, "data/gene_expression/filtered/mammals_", tissue, "_gene_expression_log2TPM.Rds"))
+  gene.score = readRDS(paste0(path, "data/gene_expression/filtered/mammals_", tissue, "_gene_expression_score.Rds"))
   
   # Correct dog species name 
   dog_index <- which(names(gene.expression) == "Canis_lupus familiaris")
@@ -23,9 +23,14 @@ for(tissue in tissues){
   species = names(gene.expression)
   orthogroups = all_orthogroups[,species]
   
-  # Select orthogroups with genes for at least 15 species or all species
+  # Select orthogroups with genes for at least 10 species or all species
   orthogroups_all_sp = orthogroups[rowSums(!is.na(orthogroups)) >= min_species,]
   #orthogroups_all_sp =  orthogroups[complete.cases(orthogroups),]
+  
+  # Background genes
+  orthogroups_human <- orthogroups_all_sp$Homo_sapiens
+  orthogroups_human <- orthogroups_human[!is.na(orthogroups_human)]
+  write.table(orthogroups_human, file=paste0(path, "results/gene_list/mammals_", tissue, "_1-1_orthogroups_filtered.txt"), row.names = F, quote=F, col.names=F)
   
   # Create empty data.frame for gene expression in each orthogroup
   samples <- unlist(sapply(gene.expression, function(x) colnames(x)))
@@ -74,43 +79,20 @@ for(tissue in tissues){
   score_ortho_all_sp <- score_ortho[,c("species", ortho_all_sp)] 
   
   # Print summary and save final data.frame per tissue
+  nb_ortho = ncol(express_ortho_all_sp)
   print(paste(length(species), "species;", 
               nrow(express_ortho_all_sp), "samples;", 
-              ncol(express_ortho_all_sp)-1, "genes."))
+              nb_ortho-1, "genes."))
+  
+  # Background expressed genes
+  orthogroups_human <- orthogroups_all_sp[colnames(express_ortho_all_sp)[2:nb_ortho],"Homo_sapiens"]
+  orthogroups_human <- orthogroups_human[!is.na(orthogroups_human)]
+  write.table(orthogroups_human, file=paste0(path, "results/gene_list/mammals_", tissue, "_expressed_filtered.txt"), row.names = F, quote=F, col.names=F)
   
   # add sample as column
   express_ortho_all_sp <- cbind(sample=row.names(express_ortho_all_sp), express_ortho_all_sp)
   score_ortho_all_sp <- cbind(sample=row.names(score_ortho_all_sp), score_ortho_all_sp)
   
-  write.csv(express_ortho_all_sp, file=paste0(path, "results/gene_expression/mammals_", tissue, "_gene_expression_logTPM_orthogroups.csv"), row.names = F)
-  write.csv(score_ortho_all_sp, file=paste0(path, "results/gene_expression/mammals_", tissue, "_gene_expression_score_orthogroups.csv"), row.names = F)
+  write.csv(express_ortho_all_sp, file=paste0(path, "results/gene_expression/filtered/mammals_", tissue, "_gene_expression_log2TPM_orthogroups_2022_only_mammals.csv"), row.names = F)
+  write.csv(score_ortho_all_sp, file=paste0(path, "results/gene_expression/filtered/mammals_", tissue, "_gene_expression_score_orthogroups_2022_only_mammals.csv"), row.names = F)
 }
-
-
-
-### All species
-# liver = 24 species, 585 samples, 481 genes.
-# cerebellum = 21 species, 112 samples, 577 genes.
-# kidney = 21 species, 153 samples, 600 genes. 
-# testis = 19 species, 160 samples, 750 genes.
-
-### At least 15 species 
-# liver: 24 species; 585 samples; 8936 genes.
-# cerebellum: 21 species; 112 samples; 7676 genes.
-# kidney: 21 species; 153 samples; 7958 genes.
-# testis: 19 species; 160 samples; 7027 genes.
-
-sp = "Homo_sapiens"
-gene = "ENSG00000109606"
-orthogroup = row.names(orthogroups[which(orthogroups[[sp]] == gene),])
-
-# Directly from orthogroup
-expression = expression_ortho[[orthogroup]]
-
-par(mar = c(7, 4, 2, 2) + 0.1)
-a <- boxplot(expression~expression_ortho$species, outline=F, xaxt = "n",
-             ylab="Gene expression (FPKM)", xlab="", main=paste("DHX15 in", tissue), cex.lab=1)
-
-
-axis(1, at = 1:length(a$names), labels = NA, cex.axis = 1, srt=45, tck = -0.02)
-text(x = 1:length(a$names), y = par("usr")[3] - 3, labels = a$names, srt = 45, adj = 1, xpd = TRUE, cex=0.8)
