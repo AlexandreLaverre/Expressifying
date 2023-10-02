@@ -1,26 +1,53 @@
 path = "/Users/alaverre/Documents/Expressifying/"
 
-tissue="liver"
+tissue="kidney"
 
 # Expression data
 express <- read.csv(paste0(path, "results/gene_expression/mammals_", tissue, "_gene_expression_log2TPM_orthogroups.csv"), h=T)
 score <- read.csv(paste0(path, "results/gene_expression/mammals_", tissue, "_gene_expression_score_orthogroups.csv"), h=T)
 
+express2022 <- read.csv(paste0(path, "results/gene_expression/mammals_", tissue, "_gene_expression_log2TPM_orthogroups_2022_only_mammals.csv"), h=T)
+score2022 <- read.csv(paste0(path, "results/gene_expression/mammals_", tissue, "_gene_expression_score_orthogroups_2022_only_mammals.csv"), h=T)
+
+sp=length(unique(express$species))
+nb_genes=ncol(express)-2
+samples=nrow(express)
+sp2=length(unique(express2022$species))
+nb_genes2=ncol(express2022)-2
+samples2=nrow(express2022)
+
+print(paste(tissue, "2021:", sp, "species,", nb_genes, "genes,", samples, "samples."))
+print(paste(tissue, "2022:", sp2, "species,", nb_genes2, "genes,", samples2, "samples."))
+
 # Gene orthology
-ortho <- read.csv(paste0(path, "data/gene_orthologies/one2one_orthogroups.csv"), row.names = 1)
+ortho <- read.csv(paste0(path, "data/gene_orthologies/one2one_orthogroups_2021.csv"), row.names = 1)
+ortho2022 <- read.csv(paste0(path, "data/gene_orthologies/one2one_orthogroups_2022_mammals.csv"), row.names = 1)
 
 ################################################################################
 #### Expression of a given orthogroup in all species 
-orthogroup = sample(colnames(express), 1)
+orthogroup = "Orthogroup_9556" #sample(colnames(express), 1)
 human.gene = ortho[orthogroup, "Homo_sapiens"]
 
-par(mfrow=c(1,1))
+col <- c(rep("grey", 8), "red", rep("grey", 10))
+par(mfrow=c(1,2))
 par(mai=c(1.5,0.8,0.4,0.3), mgp=c(2.2,0.7,0))
-a <- boxplot(express[[orthogroup]]~express$species, outline=F, xaxt = "n", las=1,
-             ylab="log(TPM)", xlab="", main=paste(orthogroup, "in", tissue), cex.lab=1)
+a <- boxplot(express[[orthogroup]]~express$species, outline=F, xaxt = "n", las=1, ylim=c(-1, 10),
+             ylab="log(TPM)", xlab="", main=paste("OMA 2021:", human.gene, "in", tissue), cex.lab=1)
 
 axis(1, at = 1:length(a$names), labels = NA, cex.axis = 1, srt=45, tck = -0.02)
-text(x = 1:length(a$names), y = par("usr")[3] - 0.3, labels = a$names, srt = 45, adj = 1, xpd = TRUE, cex=1)
+text(x = 1:length(a$names), y = par("usr")[3] - 0.3, labels = a$names, srt = 45, adj = 1, xpd = TRUE, cex=1, col=col)
+
+
+orthogroup2022="Orthogroup_750"
+human.gene2022 = ortho2022[orthogroup2022, "Homo_sapiens"]
+
+col <- c(rep("grey", 8), "red", "grey", "green", "grey", "green", rep("grey", 8))
+
+b <- boxplot(express2022[[orthogroup2022]]~express2022$species, outline=F, xaxt = "n", las=1, ylim=c(-1, 10),
+             ylab="log(TPM)", xlab="", main=paste("OMA 2022:", human.gene2022, "in", tissue), cex.lab=1, col=col)
+
+axis(1, at = 1:length(b$names), labels = NA, cex.axis = 1, srt=45, tck = -0.02)
+text(x = 1:length(b$names), y = par("usr")[3] - 0.3, labels = b$names, srt = 45, adj = 1, xpd = TRUE, cex=1, col=col)
 
 ################################################################################
 #### Expression of a given species 
