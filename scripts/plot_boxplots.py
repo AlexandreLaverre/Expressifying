@@ -35,6 +35,14 @@ def open_orthogroups(input_orthogroups: str) -> dict:
     return dico_rename
 
 
+def find_between(input_str: str, begin: str, last: str):
+    assert begin in input_str
+    assert last in input_str
+    i = input_str.index(begin)
+    j = input_str.index(last)
+    return input_str[i + len(begin): j]
+
+
 def main(tsv_traits_list: str, tsv_Bayes: str, input_orthogroups: str, output_pdf: str):
     output_dir = os.path.dirname(output_pdf)
     folder_plots = f"{output_dir}/boxplots"
@@ -47,12 +55,13 @@ def main(tsv_traits_list: str, tsv_Bayes: str, input_orthogroups: str, output_pd
     o = open(output_tex, 'w')
     o.write(preamble)
     dico_ortho = open_orthogroups(input_orthogroups)
-    dico_df = {os.path.basename(i).split("_")[1]: pd.read_csv(i, sep=',') for i in tsv_traits_list}
+    dico_df = {find_between(os.path.basename(i), "mammals_", "_gene_expression_"): pd.read_csv(i, sep=',') for i in
+               tsv_traits_list}
     for dataset, group_df in df_out.groupby("dataset"):
         print(dataset)
         group_df = group_df.sort_values(by="ratio", ascending=False)
         dataset_df = dico_df[dataset]
-        o.write(f"\\section{{ {dataset} }} \n")
+        o.write(f"\\section{{ {dataset.replace('_', ' ')} }} \n")
         for _, row in group_df.iterrows():
             print(row["trait"])
             title = f"{row['trait']} in {row['dataset']} with ρ={row['ratio']:.2f}"

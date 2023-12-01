@@ -9,7 +9,7 @@ def main(tsv_list: str, output: str):
     list_df = []
     for path in tsv_list:
         df = pd.read_csv(path, sep='\t')
-        df["dataset"] = os.path.basename(path).replace(".tsv", "").split("_")[0]
+        df["dataset"] = "_".join(os.path.basename(path).split("_")[:-1])
         list_df.append(df)
     df_out = pd.concat(list_df)
     sort_key = [i for i in ["ratio_pv", "ratio"] if i in df_out.columns][0]
