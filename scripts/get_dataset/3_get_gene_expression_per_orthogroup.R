@@ -12,6 +12,7 @@ min_species = if (length(args)>0) args[1] else 10 # can be "no-missing" for comp
 ################################################################################
 all_orthogroups = read.csv(paste0(path, "data/gene_orthologies/one2one_orthogroups_OMA22_mammals.csv"), row.names = 1)
 conditions <- list.dirs(paste0(path, "/data/gene_expression/log2TPM/"), full.names = FALSE, recursive = FALSE)
+
 dir.create(paste0(path, "results/gene_expression_orthogroups/log2TPM/"), recursive=T, showWarnings=F)
 dir.create(paste0(path, "results/gene_expression_orthogroups/rank_score/"), recursive=T, showWarnings=F)
 

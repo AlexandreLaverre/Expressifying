@@ -1,4 +1,7 @@
 #!/usr/bin/env Rscript
+if (!requireNamespace("BgeeDB", quietly = TRUE)) {
+  install.packages("BgeeDB")
+}
 suppressPackageStartupMessages(library(BgeeDB))
 
 ################################################################################
@@ -11,9 +14,11 @@ tissue = if (length(args)>0) args[1] else "heart"         # default = "heart"
 sex = if (length(args)>1) args[2] else "all-sex"          # default = "all-sex" for c("female", "male", "mixed", "NA")
 stage = if (length(args)>2) args[3] else "post-juvenile"  # default = "post-juvenile"
 
-condition = paste0(tissue, "_", sex, "_", stage)
+condition = paste(tissue, sex, stage, sep="_")
+if (tissue == "testis"|| tissue == "ovary"){condition = paste0(tissue, "_", stage)}
+
 print(paste0("Running on ", condition))
-#example.organs <- c("kidney", "liver", "heart", "lung", "testis", "cerebellum",
+#example.major.organs <- c("kidney", "liver", "heart", "lung", "testis", "cerebellum",
 #                  "spinal cord", "colon", "pituitary gland", "uterus", "muscle tissue",
 #                  "blood",  "zone of skin", "esophagus", "stomach", "intestine",
 #                  "bone element", "spleen", "brain", "ovary") 
