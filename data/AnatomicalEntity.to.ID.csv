@@ -1,0 +1,571 @@
+Anatomical.entity.ID	Anatomical.entity.name
+UBERON:0002548	larva
+UBERON:0007023	adult organism
+UBERON:0019248	early embryo
+UBERON:0000323	late embryo
+UBERON:0000922	embryo
+UBERON:0000468	multi-cellular organism
+UBERON:0019251	4-cell stage embryo
+WBbt:0005451	pharyngeal muscle cell
+UBERON:6003007	insect adult head
+UBERON:0001045	midgut
+UBERON:0000992	ovary
+UBERON:0001046	hindgut
+UBERON:0001054	Malpighian tubule
+UBERON:0000473	testis
+UBERON:6001919	embryonic/larval central nervous system
+UBERON:0003917	arthropod fat body
+UBERON:0001044	saliva-secreting gland
+UBERON:0003127	open tracheal system trachea
+UBERON:0005399	male reproductive gland
+UBERON:0000955	brain
+UBERON:0009854	digestive tract diverticulum
+UBERON:0000018	compound eye
+UBERON:0003339	ganglion of central nervous system
+UBERON:0000994	spermathecum
+UBERON:0003143	pupa
+UBERON:0013765	digestive system element
+UBERON:0000939	imaginal disc
+UBERON:0001017	central nervous system
+UBERON:0000992	female gonad
+UBERON:0006868	seminal fluid secreting gland
+UBERON:0003142	prepupa
+UBERON:0004734	gastrula
+FBbt:00001669	primary lobe of embryonic/larval lymph gland
+UBERON:0000474	female reproductive system
+UBERON:0000079	male reproductive system
+UBERON:0004455	neurula embryo
+UBERON:0000307	blastula
+UBERON:0012473	oral cirrus
+CL:0000025	egg cell
+UBERON:0001003	skin epidermis
+UBERON:0008815	pharyngeal slit
+UBERON:0001555	digestive tract
+UBERON:0012474	hepatic cecum
+UBERON:0002385	muscle tissue
+UBERON:0005054	primary dorsal nerve cord
+UBERON:0000080	mesonephros
+UBERON:0000152	pelvic fin
+UBERON:0000151	pectoral fin
+UBERON:0001042	chordate pharynx
+UBERON:0000206	pharyngeal gill
+UBERON:0003665	post-anal tail muscle
+UBERON:0002107	liver
+UBERON:0000019	camera-type eye
+UBERON:0000948	heart
+UBERON:0000014	zone of skin
+UBERON:0001474	bone element
+UBERON:0000160	intestine
+UBERON:0006860	swim bladder
+UBERON:0007021	sexually immature organism
+UBERON:0007132	head kidney
+UBERON:0000033	head
+UBERON:0002415	tail
+CL:0000094	granulocyte
+UBERON:0000966	retina
+UBERON:0003982	mature ovarian follicle
+UBERON:0002106	spleen
+UBERON:0001997	olfactory epithelium
+UBERON:0000004	nose
+UBERON:0000945	stomach
+UBERON:4300174	actinopterygian pyloric caecum
+UBERON:0001968	semen
+UBERON:0005057	immune organ
+CL:0000365	zygote
+UBERON:4000164	caudal fin
+CL:0000365	animal zygote
+UBERON:4000163	anal fin
+UBERON:0001846	internal ear
+UBERON:0002113	kidney
+UBERON:0002048	lung
+UBERON:0001264	pancreas
+CL:0000023	oocyte
+UBERON:0019249	2-cell stage embryo
+UBERON:0007233	4-cell stage embryo
+UBERON:0001134	skeletal muscle tissue
+CL:0000025	egg
+UBERON:0002037	cerebellum
+CL:0000492	CD4-positive helper T cell
+CL:0000625	CD8-positive, alpha-beta T cell
+UBERON:0001280	liver parenchyma
+UBERON:0001155	colon
+UBERON:0001905	pineal body
+UBERON:0000956	cerebral cortex
+UBERON:0002116	ileum
+UBERON:0001013	adipose tissue
+CL:0000017	spermatocyte
+CL:0000018	spermatid
+UBERON:0002381	pectoralis major
+UBERON:0002370	thymus
+UBERON:0005052	gizzard
+UBERON:0000376	hindlimb stylopod
+UBERON:0007357	proventriculus
+UBERON:0002115	jejunum
+UBERON:0002114	duodenum
+UBERON:0013478	cecal tonsil
+UBERON:0003903	bursa of Fabricius
+UBERON:0000310	breast
+UBERON:0000991	gonad
+UBERON:0000082	adult mammalian kidney
+CL:0000057	fibroblast
+UBERON:0001295	endometrium
+UBERON:0003663	hindlimb muscle
+UBERON:0000087	inner cell mass
+UBERON:0005386	olfactory segment of nasal mucosa
+UBERON:0001870	frontal cortex
+UBERON:0002371	bone marrow
+UBERON:0002812	left cerebral hemisphere
+UBERON:0000007	pituitary gland
+UBERON:0002813	right cerebral hemisphere
+UBERON:0000029	lymph node
+UBERON:0000178	blood
+UBERON:0001347	white adipose tissue
+UBERON:0010533	metanephros cortex
+UBERON:0002369	adrenal gland
+UBERON:0001155	heart
+UBERON:0002046	thyroid gland
+UBERON:0001871	temporal lobe
+UBERON:0001890	forebrain
+UBERON:0002028	hindbrain
+UBERON:0000451	prefrontal cortex
+UBERON:0001377	quadriceps femoris
+UBERON:0002129	cerebellar cortex
+UBERON:0004252	hindlimb stylopod muscle
+UBERON:0001225	cortex of kidney
+UBERON:0002661	superior frontal gyrus
+UBERON:0002436	primary visual cortex
+UBERON:0002264	olfactory bulb
+UBERON:0002702	middle frontal gyrus
+UBERON:0002998	inferior frontal gyrus
+UBERON:0034671	arcuate sulcus
+UBERON:0002570	medial orbital gyrus
+UBERON:0002691	ventral tegmental area
+UBERON:0002038	substantia nigra
+UBERON:0001891	midbrain
+UBERON:0001876	amygdala
+UBERON:0001885	dentate gyrus of hippocampal formation
+UBERON:0003881	CA1 field of hippocampus
+UBERON:0003883	CA3 field of hippocampus
+UBERON:0001882	nucleus accumbens
+UBERON:0002751	inferior temporal gyrus
+UBERON:0002769	superior temporal gyrus
+UBERON:0016538	temporal cortex
+UBERON:0002421	hippocampal formation
+UBERON:0002766	fusiform gyrus
+UBERON:0002973	parahippocampal gyrus
+UBERON:0002943	lingual gyrus
+UBERON:0002740	posterior cingulate gyrus
+UBERON:0002756	anterior cingulate gyrus
+UBERON:0002336	corpus callosum
+UBERON:0004703	dorsal thalamus
+UBERON:0001898	hypothalamus
+UBERON:0002581	postcentral gyrus
+UBERON:0006094	superior parietal cortex
+UBERON:0002913	intraparietal sulcus
+UBERON:0002686	angular gyrus
+UBERON:0026137	annectant gyrus
+UBERON:0006092	cuneus cortex
+UBERON:0001896	medulla oblongata
+UBERON:0000988	pons
+UBERON:0004720	cerebellar vermis
+UBERON:0001873	caudate nucleus
+UBERON:0001874	putamen
+UBERON:0001875	globus pallidus
+UBERON:0002948	superior occipital gyrus
+UBERON:0014608	inferior occipital gyrus
+UBERON:0002021	occipital lobe
+UBERON:0002022	insula
+UBERON:0002703	precentral gyrus
+UBERON:0009834	dorsolateral prefrontal cortex
+UBERON:0001236	adrenal medulla
+UBERON:0001235	adrenal cortex
+UBERON:0001165	pyloric antrum
+UBERON:0000947	aorta
+UBERON:0001932	arcuate nucleus of hypothalamus
+UBERON:0001156	ascending colon
+UBERON:0001097	axillary lymph node
+UBERON:0001255	urinary bladder
+UBERON:0001153	caecum
+UBERON:0000964	cornea
+UBERON:0001158	descending colon
+UBERON:0001934	dorsomedial nucleus of hypothalamus
+UBERON:0001904	habenula
+UBERON:0001954	Ammon's horn
+UBERON:0001769	iris
+UBERON:0000362	renal medulla
+UBERON:0002476	lateral globus pallidus
+UBERON:0001937	lateral hypothalamic nucleus
+UBERON:0002509	mesenteric lymph node
+UBERON:0002477	medial globus pallidus
+UBERON:0002206	mammillary body
+UBERON:0003833	abdominal segment muscle
+UBERON:0001388	gastrocnemius
+UBERON:0001043	esophagus
+UBERON:0010414	omental fat pad
+UBERON:0001783	optic disc
+UBERON:0001928	preoptic area
+UBERON:0002367	prostate gland
+UBERON:0001920	paraventricular nucleus of thalamus
+UBERON:0001782	pigmented layer of retina
+UBERON:0002034	suprachiasmatic nucleus
+UBERON:0001135	smooth muscle tissue
+UBERON:0001929	supraoptic nucleus
+UBERON:0001160	fundus of stomach
+UBERON:0000411	visual cortex
+UBERON:0001935	ventromedial nucleus of hypothalamus
+UBERON:0015143	mesenteric fat pad
+UBERON:0035814	pericardial fat
+UBERON:0005406	perirenal fat
+UBERON:0002190	subcutaneous adipose tissue
+UBERON:0004922	postnatal subventricular zone
+UBERON:0001416	skin of abdomen
+UBERON:0016634	premotor cortex
+UBERON:0009835	anterior cingulate cortex
+UBERON:0002435	striatum
+UBERON:0001987	placenta
+UBERON:0013541	Brodmann (1909) area 10
+UBERON:0001868	skin of chest
+UBERON:0005200	thoracic mammary gland
+CL:0000738	leukocyte
+UBERON:0001154	vermiform appendix
+UBERON:0002110	gall bladder
+UBERON:0002108	small intestine
+UBERON:0001296	myometrium
+UBERON:0004024	medial ganglionic eminence
+UBERON:0004025	lateral ganglionic eminence
+UBERON:0001950	neocortex
+UBERON:0003701	calcaneal tendon
+UBERON:0001052	rectum
+UBERON:0003889	fallopian tube
+UBERON:0002372	tonsil
+UBERON:0000468	multicellular organism
+CL:0002255	stromal cell of endometrium
+UBERON:0013540	Brodmann (1909) area 9
+UBERON:0006093	precuneus cortex
+UBERON:0008952	upper lobe of left lung
+UBERON:0016528	white matter of frontal lobe
+UBERON:0003528	brain gray matter
+UBERON:0005343	cortical plate
+PBA:294022000	subventricular zone (inner) (primate)
+PBA:294021980	subventricular zone (outer) (primate)
+UBERON:0003053	ventricular zone
+UBERON:0001120	left lobe of thyroid gland
+UBERON:0002084	heart left ventricle
+UBERON:0002810	right frontal lobe
+UBERON:0002245	cerebellar hemisphere
+UBERON:0001119	right lobe of thyroid gland
+UBERON:0001511	skin of leg
+UBERON:0002098	apex of heart
+UBERON:0006469	first cervical spinal cord segment
+UBERON:0007610	tibial artery
+UBERON:0001323	tibial nerve
+UBERON:0002250	popliteal artery
+UBERON:0008816	embryonic head
+UBERON:0006631	right atrium auricular region
+UBERON:0001150	body of pancreas
+UBERON:0013682	peripheral region of retina
+UBERON:0001781	layer of retina
+UBERON:0000053	macula lutea
+UBERON:0014890	right hemisphere of cerebellum
+UBERON:0002469	oesophagus mucosa
+UBERON:0001114	right lobe of liver
+UBERON:0004534	right testis
+UBERON:0001496	ascending aorta
+UBERON:0001234	left adrenal gland
+UBERON:0035827	right adrenal gland cortex
+UBERON:0009853	body of uterus
+UBERON:0004533	left testis
+UBERON:0001161	body of stomach
+UBERON:0000996	vagina
+UBERON:0035833	lower esophagus muscularis layer
+UBERON:0001626	left coronary artery
+UBERON:0001515	thoracic aorta
+UBERON:0002196	adenohypophysis
+UBERON:0001157	transverse colon
+UBERON:0002119	left ovary
+CL:0000576	monocyte
+UBERON:0001379	vastus lateralis
+UBERON:0000006	islet of Langerhans
+UBERON:0015488	sural nerve
+UBERON:0001992	papillary layer of dermis
+UBERON:0001993	reticular layer of dermis
+UBERON:0010996	articular cartilage of joint
+UBERON:0035841	esophagogastric junction muscularis propria
+UBERON:0035805	muscle layer of sigmoid colon
+UBERON:0013473	lower esophagus
+UBERON:0001830	minor salivary gland
+UBERON:0003454	small intestine Peyer's patch
+UBERON:0001302	right uterine tube
+UBERON:0035825	left adrenal gland cortex
+UBERON:0001303	left uterine tube
+UBERON:0012249	ectocervix
+UBERON:0000458	endocervix
+UBERON:0001625	right coronary artery
+UBERON:0002118	right ovary
+UBERON:0001233	right adrenal gland
+UBERON:0001285	nephron
+UBERON:0035834	lower esophagus mucosa
+UBERON:0000397	colonic epithelium
+UBERON:0000002	uterine cervix
+CL:0000842	mononuclear cell
+CL:0002092	bone marrow cell
+UBERON:0001384	primary motor cortex
+UBERON:0002167	right lung
+UBERON:0002345	descending thoracic aorta
+UBERON:0001383	muscle of leg
+UBERON:0014890	cerebellar hemisphere
+UBERON:0001199	mucosa of stomach
+UBERON:0035841	esophagus muscularis mucosa
+UBERON:0013553	Brodmann (1909) area 22
+UBERON:0013552	Brodmann (1909) area 21
+UBERON:0006484	Brodmann (1909) area 47
+UBERON:0006483	Brodmann (1909) area 46
+UBERON:0006481	Brodmann (1909) area 44
+UBERON:0013573	Brodmann (1909) area 40
+UBERON:0006480	Brodmann (1909) area 39
+UBERON:0006472	Brodmann (1909) area 6
+UBERON:0006482	Brodmann (1909) area 45
+UBERON:0004991	mucosa of transverse colon
+UBERON:0003499	brain blood vessel
+UBERON:0018303	adrenal tissue
+UBERON:0004358	caput epididymis
+UBERON:0004360	cauda epididymis
+UBERON:0004359	corpus epididymis
+UBERON:0002886	lateral amygdaloid nucleus
+UBERON:0014455	subcutaneous abdominal adipose tissue
+UBERON:0003382	cardiac muscle of left ventricle
+UBERON:0015476	nose skin
+UBERON:0000059	large intestine
+UBERON:0001723	tongue
+UBERON:0001259	mucosa of urinary bladder
+UBERON:0002240	spinal cord
+UBERON:0002073	hair follicle
+CL:0000312	keratinocyte
+UBERON:0001911	mammary gland
+UBERON:0002080	heart right ventricle
+UBERON:0002078	rigth cardiac atrium
+UBERON:0002079	left cardiac atrium
+UBERON:0002418	cartilage tissue
+UBERON:0016540	occipital cortex
+UBERON:0002135	mitral valve
+UBERON:0010230	eyeball of camera-type eye
+UBERON:1000017	tip of external ear
+UBERON:0000995	uterus
+UBERON:0001371	gluteus medius
+UBERON:0000044	dorsal root ganglion
+UBERON:0002000	gluteal muscle
+UBERON:0008999	hoof lamina
+UBERON:0003380	cardiac muscle of left atrium
+UBERON:0006727	liver left lateral lobe
+UBERON:0001401	longissimus thoracis muscle
+UBERON:0002168	left lung
+UBERON:0016530	parietal cortex
+UBERON:0011472	ventral lateral sacrocaudal muscle
+UBERON:0002792	lumbar spinal cord
+UBERON:0008841	suspensory ligament
+UBERON:0010932	crico-arytenoid muscle
+UBERON:0001068	skin of back
+UBERON:0008963	hoof
+UBERON:0000088	trophoblast
+UBERON:0004804	oviduct epithelium
+UBERON:0001509	triceps brachii
+UBERON:0002298	brainstem
+UBERON:0004345	trophectoderm
+UBERON:0000043	tendon
+UBERON:0000211	ligament
+UBERON:0002481	bone tissue
+UBERON:0007106	chorionic villus
+UBERON:0002018	synovial membrane of synovial joint
+UBERON:0002031	epithelium of bronchus
+UBERON:0015472	tracheobronchial lymph node
+CL:0000501	granulosa cell
+UBERON:0005316	endocardial endothelium
+UBERON:0016525	frontal lobe
+CL:0000583	alveolar macrophage
+UBERON:0003688	omentum
+UBERON:0001301	epididymis
+UBERON:0000989	penis
+UBERON:0001897	dorsal plus ventral thalamus
+UBERON:0001675	trigeminal ganglion
+CL:0000798	gamma-delta T cell
+CL:0000084	T cell
+CL:0000763	myeloid cell
+CL:0000623	natural killer cell
+CL:0000236	B cell
+UBERON:0007616	layer of synovial tissue
+UBERON:0007808	adipose tissue of abdominal region
+UBERON:0005417	forelimb bud
+UBERON:0002420	basal ganglion
+UBERON:0001374	biceps femoris
+UBERON:0000465	material anatomical entity
+UBERON:0011219	longissimus lumborum muscle
+UBERON:0001381	semimembranosus muscle
+UBERON:0001298	psoas major muscle
+UBERON:0013618	secondary molar tooth
+UBERON:0001690	ear
+UBERON:0005418	hindlimb bud
+CL:0000019	sperm
+UBERON:0001375	semitendinosus
+UBERON:0001129	subscapularis muscle
+UBERON:0001221	transversus abdominis muscle
+UBERON:0001376	tensor fasciae latae muscle
+UBERON:0001385	tibialis anterior
+UBERON:0001478	teres major muscle
+UBERON:0002380	trapezius muscle
+UBERON:0014847	vastus intermedius
+UBERON:0001380	vastus medialis
+UBERON:0011145	adductor muscle
+UBERON:0001507	biceps brachii
+UBERON:0011368	brachiocephalic muscle
+UBERON:0001893	telencephalon
+UBERON:0004500	skeletal muscle tissue of deltoid
+UBERON:0007612	extensor digitorum communis
+UBERON:0011908	gastrocnemius lateralis
+UBERON:0011907	gastrocnemius medialis
+UBERON:0005448	greater omentum
+UBERON:0000950	gracilis
+UBERON:0001477	infraspinatus muscle
+UBERON:0001112	latissimus dorsi muscle
+UBERON:0000378	tongue muscle
+UBERON:0001597	masseter muscle
+UBERON:0035032	abdominal oblique muscle
+CL:0002518	kidney epithelial cell
+CL:0000115	endothelial cell
+UBERON:0001100	pectoralis minor
+UBERON:0002382	rectus abdominis muscle
+UBERON:0001378	rectus femoris
+UBERON:0005621	rhomboid
+UBERON:0002078	right cardiac atrium
+UBERON:0001373	sartorius muscle
+UBERON:0001389	soleus muscle
+UBERON:0002252	splenius
+UBERON:0002383	supraspinatus muscle
+UBERON:0007613	extensor digitorum lateralis muscle
+UBERON:0001523	flexor digitorum profundus
+UBERON:0003222	flexor digitorum superficialis
+CL:0000775	neutrophil
+UBERON:0000399	jejunal mucosa
+CL:0000503	theca cell
+UBERON:0010153	rumen papilla
+UBERON:0000569	ileocecal valve
+UBERON:0012648	ampulla of uterine tube
+UBERON:0003984	uterine tube infundibulum
+UBERON:0001111	intercostal muscle
+UBERON:0007367	surface of tongue
+UBERON:0001826	nasal cavity mucosa
+UBERON:0001739	laryngeal cartilage
+UBERON:0003126	trachea
+UBERON:0002198	neurohypophysis
+UBERON:0002197	median eminence of neurohypophysis
+UBERON:0007625	pigment epithelium of eye
+UBERON:0002081	cardiac atrium
+UBERON:0001103	diaphragm
+UBERON:0002512	corpus luteum
+UBERON:0016632	isthmus of fallopian tube
+UBERON:0000051	fornix of vagina
+UBERON:0000056	ureter
+UBERON:0000057	urethra
+UBERON:0007358	abomasum
+UBERON:0007362	omasum
+UBERON:0006911	digestive system secreted substance
+UBERON:0007361	ruminant reticulum
+UBERON:0015869	retropharyngeal lymph node
+UBERON:0001728	nasopharynx
+UBERON:0001732	pharyngeal tonsil
+UBERON:0007365	rumen
+UBERON:0008285	rumen epithelium
+UBERON:0019143	intramuscular adipose tissue
+UBERON:0000392	longissimus muscle
+UBERON:0010239	spiral colon
+UBERON:0036245	parenchyma of mammary gland
+UBERON:0001913	milk
+UBERON:0034908	scapular muscle
+CL:0000711	cumulus cell
+UBERON:0004716	conceptus
+UBERON:0002247	uterine horn
+UBERON:0001886	choroid plexus
+UBERON:0001000	vas deferens
+UBERON:0004180	mammary gland fat
+UBERON:0001305	ovarian follicle
+UBERON:0002082	cardiac ventricle
+UBERON:0007194	vesicular_gland
+UBERON:0002366	bulbo-urethral gland
+UBERON:0003309	diencephalon
+UBERON:0002507	abdominal lymph node
+CL:0000542	lymphocyte
+UBERON:0001801	anterior segment of eyeball
+UBERON:0001130	vertebral column
+UBERON:6001060	embryonic brain
+UBERON:0016481	bronchial lymph node
+UBERON:0001417	skin of neck
+UBERON:0001554	skin of hip
+UBERON:0004264	lower leg skin
+UBERON:0003531	forelimb skin
+UBERON:0006967	horn
+UBERON:0015863	gastric lymph node
+UBERON:0016378	ileocolic lymph node
+UBERON:0001211	Peyer's patch
+UBERON:0002520	submandibular lymph node
+UBERON:0001166	pylorus
+UBERON:0002134	tricuspid valve
+UBERON:0035216	thoracic part of esophagus
+UBERON:0017258	placentome of cotyledonary placenta
+UBERON:0016382	prescapular lymph node
+UBERON:0017259	placental caruncle
+UBERON:0009780	cardiac muscle tissue of left auricle
+UBERON:0001829	major salivary gland
+UBERON:0013119	haemal node
+UBERON:0001543	popliteal lymph node
+UBERON:0002137	aortic valve
+UBERON:0004502	skeletal muscle tissue of biceps brachii
+UBERON:0003981	primordial ovarian follicle
+UBERON:0000036	secondary ovarian follicle
+UBERON:0000035	primary ovarian follicle
+UBERON:0001869	cerebral hemisphere
+UBERON:0001211	peyer's patch
+UBERON:0010154	inner lining mucosa of the abomasum
+UBERON:0036285	wall of left ventricle
+UBERON:0018132	tail fat pad
+UBERON:0015790	autopod skin
+UBERON:0002255	vomeronasal organ
+UBERON:0003902	retinal neural layer
+UBERON:0000965	lens of camera-type eye
+CL:2000089	dentate gyrus of hippocampal formation granule cell
+UBERON:0001348	brown adipose tissue
+CL:0002476	bone marrow macrophage
+CL:0002322	embryonic stem cell
+UBERON:0004023	ganglionic eminence
+UBERON:0001049	neural tube
+UBERON:0002101	limb
+UBERON:0005394	cortical layer V
+UBERON:0012314	embryonic facial prominence
+UBERON:0002956	granular layer of cerebellar cortex
+UBERON:0001833	lip
+UBERON:0001736	submandibular gland
+UBERON:0004067	lateral nasal prominence
+UBERON:0004068	medial nasal prominence
+UBERON:0005868	maxillary prominence
+UBERON:0005867	mandibular prominence
+CL:0000654	primary oocyte
+CL:0000655	secondary oocyte
+UBERON:0003428	gonadal fat pad
+UBERON:0001159	sigmoid colon
+UBERON:0001040	yolk sac
+UBERON:0004134	proximal tubule
+UBERON:0004539	right kidney
+CL:0010003	epithelial cell of alveolus of lung
+UBERON:0003661	limb muscle
+UBERON:0005876	undifferentiated genital tubercle
+UBERON:0007144	embryonic post-anal tail
+UBERON:0007100	primary circulatory organ
+UBERON:0002532	epiblast (generic)
+UBERON:0004364	ectoplacental cone
+UBERON:0004902	urogenital sinus
+UBERON:0002325	epithelium of urethra
+UBERON:0000459	uterine wall
+UBERON:0005631	extraembryonic membrane
+UBERON:0003278	skeleton of lower jaw
+UBERON:1000003	dewlap
+UBERON:0008812	hemipenis
+CL:0002563	intestinal epithelial cell
+UBERON:0001894	diencephalon
