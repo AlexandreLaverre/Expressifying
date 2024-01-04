@@ -30,7 +30,7 @@ ID,GENUS,SPECIES_NAME,COMMON_NAME,AFFYMETRIX,EST,IN_SITU,RNA_SEQ,FULL_LENGTH,com
 9597,Pan,paniscus,bonobo,FALSE,FALSE,FALSE,TRUE,FALSE,Pan_paniscus,Vertebrates,Mammal,Primates
 9598,Pan,troglodytes,chimpanzee,FALSE,FALSE,FALSE,TRUE,FALSE,Pan_troglodytes,Vertebrates,Mammal,Primates
 9606,Homo,sapiens,human,TRUE,TRUE,FALSE,TRUE,TRUE,Homo_sapiens,Vertebrates,Mammal,Primates
-9615,Canis,lupus familiaris,dog,FALSE,FALSE,FALSE,TRUE,FALSE,Canis_lupus familiaris,Vertebrates,Mammal,
+9615,Canis,lupus_familiaris,dog,FALSE,FALSE,FALSE,TRUE,FALSE,Canis_lupus_familiaris,Vertebrates,Mammal,
 9685,Felis,catus,cat,FALSE,FALSE,FALSE,TRUE,FALSE,Felis_catus,Vertebrates,Mammal,
 9796,Equus,caballus,horse,FALSE,FALSE,FALSE,TRUE,FALSE,Equus_caballus,Vertebrates,Mammal,
 9823,Sus,scrofa,pig,FALSE,FALSE,FALSE,TRUE,FALSE,Sus_scrofa,Vertebrates,Mammal,
