@@ -1,0 +1,19 @@
+# Folders
+.idea/*
+data/*
+docs/*
+results/*
+tmp/*
+
+
+# Default ignored files
+/shelf/
+/workspace.xml
+*/DS_Store
+
+
+# Editor-based HTTP Client requests
+/httpRequests/
+# Datasource local storage ignored files
+/dataSources/
+/dataSources.local.xml
