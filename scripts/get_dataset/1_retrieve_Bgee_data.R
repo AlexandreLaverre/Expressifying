@@ -37,7 +37,7 @@ mammals <- species[which(species$Large_Taxa == "Mammal" | species$Large_Taxa == 
 Anatomical.UBERON <- read.csv(paste0(path, "/data/AnatomicalEntity.to.ID.csv"), h = T, sep="\t")
 Anat.Name2ID <- Anatomical.UBERON$Anatomical.entity.ID
 names(Anat.Name2ID) <-  Anatomical.UBERON$Anatomical.entity.name
-tissue.ID = Anat.Name2ID[[tissue]]
+tissue.ID = Anat.Name2ID[[gsub("_", " ", tissue)]]
 
 # Retrieve UBERON ID for stage name
 UBERON.stage <- c("UBERON:0000113", "UBERON:0000068", "UBERON:0000066")
