@@ -7,7 +7,8 @@ args = commandArgs(trailingOnly=TRUE)
 path <-  if (length(args)>0) getwd() else dirname(rstudioapi::getSourceEditorContext()$path)
 path <- paste0(path, "/../../")
 
-min_species = if (length(args)>0) args[1] else 10 # can be "no-missing" for complete case
+min_species = if (length(args)>0) args[1] else 10  # minimum number of species to keep an orthogroup, can be "no-missing" for complete case (default=10)
+gene_list = if (length(args)>1) args[2] else FALSE # write gene list for GO Enrichment (default=FALSE)
 
 ################################################################################
 all_orthogroups = read.csv(paste0(path, "data/gene_orthologies/one2one_orthogroups_OMA22_mammals.csv"), row.names = 1)
@@ -35,7 +36,6 @@ for(condition in conditions){
       gene.score[[sp]] = read.table(paste0(path, "data/gene_expression/rank_score/", condition, "/", sp, ".csv"))
     }
 
-    gene.expression.old = readRDS(paste0(path, "data/gene_expression/filtered/mammals_", tissue, "_gene_expression_log2TPM.Rds"))
     # Remove the naked-mole rat because OMA annotations (male) are not the same as Bgee (female) 
     gene.expression[["Heterocephalus_glaber"]] <- NULL
     gene.score[["Heterocephalus_glaber"]] <- NULL
@@ -49,11 +49,13 @@ for(condition in conditions){
       orthogroups_all_sp = orthogroups[rowSums(!is.na(orthogroups)) >= min_species,]
     }
     
-    # Background genes
-    orthogroups_human <- orthogroups_all_sp$Homo_sapiens
-    orthogroups_human <- orthogroups_human[!is.na(orthogroups_human)]
-    write.table(orthogroups_human, file=paste0(path, "results/gene_list/human_genes_", condition, "_1-1_orthogroups.txt"), row.names = F, quote=F, col.names=F)
-    
+    if (gene_list){
+      # Background genes
+      orthogroups_human <- orthogroups_all_sp$Homo_sapiens
+      orthogroups_human <- orthogroups_human[!is.na(orthogroups_human)]
+      write.table(orthogroups_human, file=paste0(path, "results/gene_list/human_genes_", condition, "_1-1_orthogroups.txt"), row.names = F, quote=F, col.names=F)
+    }
+
     ############################################################################
     print("Combining gene expression in each orthogroup...")
     
@@ -110,10 +112,12 @@ for(condition in conditions){
     nb_ortho = ncol(express_ortho_all_sp)
     print(paste(length(species), "species;", nrow(express_ortho_all_sp), "samples;", nb_ortho-1, "genes."))
     
-    # Background expressed genes
-    orthogroups_human <- orthogroups_all_sp[colnames(express_ortho_all_sp)[2:nb_ortho],"Homo_sapiens"]
-    orthogroups_human <- orthogroups_human[!is.na(orthogroups_human)]
-    write.table(orthogroups_human, file=paste0(path, "results/gene_list/mammals_", tissue, "_expressed_filtered.txt"), row.names = F, quote=F, col.names=F)
+    if (gene_list){
+      # Background expressed genes
+      orthogroups_human <- orthogroups_all_sp[colnames(express_ortho_all_sp)[2:nb_ortho],"Homo_sapiens"]
+      orthogroups_human <- orthogroups_human[!is.na(orthogroups_human)]
+      write.table(orthogroups_human, file=paste0(path, "results/gene_list/mammals_", tissue, "_expressed_filtered.txt"), row.names = F, quote=F, col.names=F)
+    }
     
     # add sample as column
     express_ortho_all_sp <- cbind(sample=row.names(express_ortho_all_sp), express_ortho_all_sp)
