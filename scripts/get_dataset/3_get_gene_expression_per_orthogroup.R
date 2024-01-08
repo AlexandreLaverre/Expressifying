@@ -7,7 +7,7 @@ args = commandArgs(trailingOnly=TRUE)
 path <-  if (length(args)>0) getwd() else dirname(rstudioapi::getSourceEditorContext()$path)
 path <- paste0(path, "/../../")
 
-min_species = if (length(args)>0) args[1] else 10  # minimum number of species to keep an orthogroup, can be "no-missing" for complete case (default=10)
+min_species = if (length(args)>0) as.numeric(args[1]) else 10  # minimum number of species to keep an orthogroup, can be "no-missing" for complete case (default=10)
 gene_list = if (length(args)>1) args[2] else FALSE # write gene list for GO Enrichment (default=FALSE)
 
 ################################################################################
@@ -41,12 +41,13 @@ for(condition in conditions){
     gene.score[["Heterocephalus_glaber"]] <- NULL
     
     orthogroups = all_orthogroups[,species]
-    
+
     # Select orthogroups with genes for at least 10 species or all species
     if (min_species == "no_missing"){
       orthogroups_all_sp <- orthogroups[complete.cases(orthogroups),]
     }else{
-      orthogroups_all_sp = orthogroups[rowSums(!is.na(orthogroups)) >= min_species,]
+      min_species = min(length(species), min_species)
+      orthogroups_all_sp <- orthogroups[rowSums(!is.na(orthogroups)) >= min_species,]
     }
     
     if (gene_list){
@@ -57,7 +58,8 @@ for(condition in conditions){
     }
 
     ############################################################################
-    print("Combining gene expression in each orthogroup...")
+    print(paste0("Combining gene expression in each orthogroup... (minimum sp per orthogroup: ", min_species, ")"))
+    print(paste0("Number of filtered orthogroups:", nrow(orthogroups_all_sp)))
     
     # Create empty data.frame for gene expression in each orthogroup
     samples <- unlist(sapply(gene.expression, function(x) colnames(x)))
