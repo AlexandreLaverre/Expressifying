@@ -55,8 +55,10 @@ def main(tsv_traits_list: str, tsv_Bayes: str, input_orthogroups: str, output_pd
     o = open(output_tex, 'w')
     o.write(preamble)
     dico_ortho = open_orthogroups(input_orthogroups)
-    dico_df = {find_between(os.path.basename(i), "mammals_", "_gene_expression_"): pd.read_csv(i, sep=',') for i in
-               tsv_traits_list}
+    dico_df = {}
+    for i in tsv_traits_list:
+        dico_df[os.path.basename(i).replace(".csv", "")] = pd.read_csv(i, sep=',')
+
     for dataset, group_df in df_out.groupby("dataset"):
         print(dataset)
         group_df = group_df.sort_values(by="ratio", ascending=False)

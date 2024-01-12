@@ -4,13 +4,18 @@ FOLDER = os.path.abspath('.')
 BURN_IN, UNTIL = 1000, 2000
 
 methods = ["Bayes", "LnL"]
-datasets = ['adult_mammalian_kidney_male', 'liver_male', 'liver_female', 'testis_male']
-traits = ['log2TPM', 'score']
-data = "OMA22"
-orthologs_path = f"{FOLDER}/data/OMA/one2one_orthogroups_2022_mammals.csv"
+bgee_ortho = f"{FOLDER}/results/gene_expression_orthogroups"
+datasets = [i.replace(".csv", "") for i in os.listdir(f"{bgee_ortho}/log2TPM") if not i.startswith(".") and os.path.isfile(f"{bgee_ortho}/log2TPM/{i}")]
+print(datasets)
+traits = ['log2TPM']
+oma_data = "OMA22"
+orthologs_path = f"{FOLDER}/data/gene_orthologies/one2one_orthogroups_{oma_data}_mammals.csv"
 heritability_path = f"{FOLDER}/data/heritability-gene-expression/41431_2019_511_MOESM2_ESM.tsv"
 polymorphism_path = f"{FOLDER}/data/science.abn5856.Ne/science.abn5856_table_s1.csv"
 divergence_path = f"{FOLDER}/data/science.abl8189.Timescale/Table_S2_RootedTrees/Concatenation_HRA_neutral_241_10miss_rooted.tree"
+
+ruleorder: read_trace > merge_traces
+
 
 rule all:
     input:
@@ -24,7 +29,7 @@ rule pre_processed_traits:
         script=f"{FOLDER}/scripts/pre_processed_traits.py",
         input_dS=divergence_path,
         input_pS=polymorphism_path,
-        input_traits=f"{FOLDER}/data/expression-datasets/mammals_{{dataset}}_gene_expression_{{trait}}_{data}.csv",
+        input_traits=f"{bgee_ortho}/{{trait}}/{{dataset}}.csv",
         input_orthogroups=orthologs_path,
         input_heritability=heritability_path
     output:
@@ -132,7 +137,7 @@ rule merge_results:
 rule plot_boxplots:
     input:
         script=f"{FOLDER}/scripts/plot_boxplots.py",
-        tsv_traits=expand(f"{FOLDER}/data/expression-datasets/mammals_{{dataset}}_gene_expression_{{{{trait}}}}_{data}.csv",dataset=datasets),
+        tsv_traits=expand(f"{bgee_ortho}/{{{{trait}}}}/{{dataset}}.csv",dataset=datasets),
         tsv_Bayes=f"{FOLDER}/results/{{trait}}/merge_Bayes.tsv",
         input_orthogroups=orthologs_path,
     output:

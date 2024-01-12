@@ -5,13 +5,17 @@ import pandas as pd
 
 def main(input_path: str, output_path: str):
     out_list_df = []
-    for file_path in os.listdir(input_path):
-        if not file_path.endswith(".tsv"):
-            continue
-        df = pd.read_csv(f"{input_path}/{file_path}", sep="\t")
-        out_list_df.append(df)
-    df_out = pd.concat(out_list_df, axis=0)
-    df_out.to_csv(output_path, sep="\t", index=False)
+    if os.path.exists(input_path):
+        for file_path in os.listdir(input_path):
+            if not file_path.endswith(".tsv"):
+                continue
+            df = pd.read_csv(f"{input_path}/{file_path}", sep="\t")
+            out_list_df.append(df)
+        df_out = pd.concat(out_list_df, axis=0)
+        df_out.to_csv(output_path, sep="\t", index=False)
+    else:
+        print(f"Input path {input_path} does not exist.")
+        open(output_path, "w").close()
 
 
 if __name__ == '__main__':

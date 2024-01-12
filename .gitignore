@@ -21,3 +21,4 @@ __pycache__
 # Datasource local storage ignored files
 /dataSources/
 /dataSources.local.xml
+/scripts/get_dataset/species_Bgee_*.tsv

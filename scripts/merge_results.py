@@ -8,6 +8,10 @@ def main(tsv_list: str, output: str):
     os.makedirs(output_dir, exist_ok=True)
     list_df = []
     for path in tsv_list:
+        if not os.path.exists(path):
+            continue
+        if open(path).read().strip() == "":
+            continue
         df = pd.read_csv(path, sep='\t')
         df["dataset"] = "_".join(os.path.basename(path).split("_")[:-1])
         list_df.append(df)
