@@ -28,7 +28,7 @@ formatData <- function (myBgeeObject, data, stats = NULL, callType = "all")
   }
   else if (myBgeeObject$dataType == "rna_seq" & compareVersion(gsub("_", 
                                                                     ".", myBgeeObject$release), "13.2") > 0 & !(stats %in% 
-                                                                                                                c("fpkm", "counts", "tpm", "rank"))) {
+                                                                                                                c("fpkm", "counts", "tpm", "rank", "pval"))) {
     stop("Choose whether data formatting should create a matrix of FPKMs, TPMs or read counts, with stats option set as \"fpkm\", \"tpm\" or \"counts\"")
   }
   if (!(callType %in% c("present", "present high quality", 
@@ -57,6 +57,10 @@ formatData <- function (myBgeeObject, data, stats = NULL, callType = "all")
   }
   else if (stats == "rank") {
     columns <- c("Library.ID", "Gene.ID", "Rank")
+    expr <- .extract.data(data, columns, callType)
+  }
+  else if (stats == "pval") {
+    columns <- c("Library.ID", "Gene.ID", "pValue")
     expr <- .extract.data(data, columns, callType)
   }
   else {
