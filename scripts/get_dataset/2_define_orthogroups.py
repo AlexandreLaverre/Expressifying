@@ -9,8 +9,8 @@ import csv
 
 path = "/Users/alaverre/Documents/Expressifying/"
 species_file = path + "data/Bgee_libraries/species_list.csv"
-all_orthogroups = path + "data/gene_orthologies/all_orthogroups_2022_mammals.csv"
-one2one_orthogroups = path + "data/gene_orthologies/one2one_orthogroups_2022_mammals.csv"
+all_orthogroups = path + "data/gene_orthologies/all_orthogroups_OMA22_mammals.csv"
+one2one_orthogroups = path + "data/gene_orthologies/one2one_orthogroups_OMA22_mammals.csv"
 
 ########################################################################################################################
 # Read matching between NCBI ID and species names
@@ -21,6 +21,12 @@ with open(species_file, "r") as match_file:
     for row in reader:
         if row[11] in ["Mammal", "Marsupial"]:
             NCBI_ID = row[0]
+            # Exceptions for Gorilla gorilla and Drosophila pseudoobscura between Bgee and OMA IDs
+            if NCBI_ID == "9593":
+                NCBI_ID = "9595"
+            if NCBI_ID == "7237":
+                NCBI_ID = "46245"
+
             #sp_name = row[1].replace(" ", "_")
             sp_name = row[9].replace(" ", "_")
             species_index[NCBI_ID] = sp_name
