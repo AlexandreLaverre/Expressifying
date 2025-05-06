@@ -15,27 +15,24 @@ def main(tsv_input_ratio: str, tsv_input_switch: str, output_pdf: str):
     df_switch["dataset"] = df_switch["dataset"].apply(lambda x: x.replace("Switchnodes_", ""))
     df_join = pd.merge(df_trait, df_switch, on=["trait", "dataset"], suffixes=("_trait", "_switch"), how="inner")
     assert len(df_join) > 0, f"No overlap between {tsv_input_ratio} and {tsv_input_switch}"
-    
-    min_trait, max_trait = df_trait["ratio"].min(), df_trait["ratio"].max()
-    groups = df_join.groupby("dataset")
-    group_by = {key1: group for key1, group in groups}
-    datasets = sorted(group_by.keys())
-    fig, axs = plt.subplots(nrows=1, ncols=len(datasets),
-                            figsize=(5 * len(datasets), 4), sharex='all', sharey='row')
-    for x_1, data_1 in enumerate(datasets):
-        df_gr = group_by[data_1]
+    datasets = sorted(set(df_join["dataset"]))
+    fig, axs = plt.subplots(nrows=1, ncols=len(datasets), sharex='all', sharey='row',
+                            figsize=(5 * len(datasets), 4))
+    for x_1, (data, df_gr) in enumerate(df_join.groupby("dataset")):
+        df_gr["ratioqcut"] = pd.qcut(df_gr["ratio"], q=50)
+
         ax = axs[x_1] if len(datasets) > 1 else axs
-        ax.set_xlabel(f"{data_1} ratio")
+        ax.set_xlabel("ratio")
         ax.set_ylabel("switch")
-        # vertical line
-        ax.plot([1, 1], [0.0, 1.0], "--", color="black", alpha=0.5)
+        ax.set_title(data)
+        ax.axvline(1, linestyle="--", color="black", alpha=0.5)
         ax.set_xscale("log")
-        ax.plot([min_trait, max_trait], [0.5, 0.5], "--", color="black", alpha=0.5)
         if len(df_gr) < 2:
             continue
-        corr = df_gr[f"ratio"].corr(df_gr["is_nuc"])
-        ax.plot(df_gr[f"ratio"], df_gr["is_nuc"], "o", alpha=0.5, label=f"r={corr:.2g}")
-        ax.set_ylim((0.0, 1.0))
+
+        df = df_gr.groupby("ratioqcut", observed=False).agg({"ratio": "mean", "is_nuc": "mean"}).reset_index()
+        corr = df[f"ratio"].corr(df["is_nuc"])
+        ax.plot(df[f"ratio"], df["is_nuc"], "o", alpha=0.5, label=f"r={corr:.2g}")
         ax.legend()
     plt.tight_layout()
     plt.savefig(output_pdf)

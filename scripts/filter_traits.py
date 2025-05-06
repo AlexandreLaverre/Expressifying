@@ -15,7 +15,7 @@ def main(input_tree, input_traits, input_var_within, neutrality_index, output_di
     df_var_within = pd.read_csv(input_var_within, sep="\t")
     df_neutrality_index = pd.read_csv(neutrality_index, sep="\t")
     df_neutrality_index = df_neutrality_index.sort_values(by="ratio", ascending=False)
-    greater_than_one = (df_neutrality_index["ratio"] > 1.0)
+    greater_than_one = (df_neutrality_index["ratio"] > 0.0)
     if greater_than_one.sum() == 0:
         # Keep the 3 first traits
         df_neutrality_index = df_neutrality_index.iloc[:3]

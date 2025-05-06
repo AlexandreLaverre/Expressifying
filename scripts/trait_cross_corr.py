@@ -29,27 +29,24 @@ def main(tsv_input: str, gene_table: str, cross_table: str, output_pdf: str):
     assert len(value_list) > 0, f"No value found in {gene_table}"
     df_join = pd.merge(df_trait, df_cross, on="trait", suffixes=("_trait", "_cross"), how="inner")
     assert len(df_join) > 0, f"No overlap between {tsv_input} and {gene_table}"
-    min_trait, max_trait = df_trait["ratio"].min(), df_trait["ratio"].max()
-    minmax_value_dict = {value: (df_join[value].min(), df_join[value].max()) for value in value_list}
-    groups = df_join.groupby("dataset")
-    group_by = {key1: group for key1, group in groups}
-    datasets = sorted(group_by.keys())
-    fig, axs = plt.subplots(nrows=len(value_list), ncols=len(datasets),
-                            figsize=(5 * len(datasets), 4 * len(value_list)), sharex='all', sharey='row')
-    for x_1, data_1 in enumerate(datasets):
-        df_gr = group_by[data_1]
+
+    datasets = sorted(set(df_join["dataset"]))
+    fig, axs = plt.subplots(nrows=len(value_list), ncols=len(datasets), sharex='all', sharey='row',
+                            figsize=(5 * len(datasets), 4 * len(value_list)))
+    for x_1, (dataset, df_gr) in enumerate(df_join.groupby("dataset")):
+        df_gr["ratioqcut"] = pd.qcut(df_gr["ratio"], q=50)
         for x_2, value in enumerate(value_list):
             ax = axs[x_2, x_1] if len(datasets) > 1 else axs[x_2]
-            ax.set_xlabel(f"{data_1} ratio")
+            ax.set_title(dataset)
+            ax.set_xlabel("ratio")
             ax.set_ylabel(value)
-            ax.plot([1, 1], [minmax_value_dict[value][0], minmax_value_dict[value]][1], "--", color="black", alpha=0.5)
+
+            df = df_gr.groupby("ratioqcut", observed=False).agg({"ratio": "mean", value: "mean"}).reset_index()
+            ax.axvline(1, linestyle="--", color="black", alpha=0.5)
             ax.set_xscale("log")
-            ax.plot([min_trait, max_trait], [0, 0], "--", color="black", alpha=0.5)
-            if len(df_gr) < 2:
-                continue
-            corr = df_gr[f"ratio"].corr(df_gr[value])
-            ax.plot(df_gr[f"ratio"], df_gr[value], "o", alpha=0.5, label=f"r={corr:.2g}")
-            ax.set_ylim(minmax_value_dict[value])
+
+            corr = df[f"ratio"].corr(df[value])
+            ax.plot(df[f"ratio"], df[value], "o", alpha=0.5, label=f"r={corr:.2g}")
             ax.legend()
     plt.tight_layout()
     plt.savefig(output_pdf)

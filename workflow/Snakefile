@@ -1,12 +1,12 @@
 import os
 
 FOLDER = os.path.abspath('.')
-BURN_IN, UNTIL = 1000, 2000
+BURN_IN, UNTIL = 100, 200
 
 methods = ["Bayes", "LnL"]
 bgee_ortho = f"{FOLDER}/results/gene_expression_orthogroups"
 datasets = [i.replace(".csv","") for i in os.listdir(f"{bgee_ortho}/log2TPM") if
-            not i.startswith(".") and os.path.isfile(f"{bgee_ortho}/log2TPM/{i}")]
+            not i.startswith(".") and os.path.isfile(f"{bgee_ortho}/log2TPM/{i}") and "cerebellum" in i]
 print(datasets)
 traits = ['log2TPM']
 oma_data = "OMA22"
@@ -36,10 +36,11 @@ wildcard_constraints:
 rule all:
     input:
         expand(f"{FOLDER}/results/{{trait}}/merged_boxplot_{{trait}}.pdf",trait=traits),
-        expand(f"{FOLDER}/results/{{trait}}/corr_scatter_{{method}}_{{trait}}.pdf",method=methods,trait=traits),
+        expand(f"{FOLDER}/results/{{trait}}/corr_dataset_{{method}}_{{trait}}.pdf",method=methods,trait=traits),
+        expand(f"{FOLDER}/results/{{trait}}/corr_method_{{trait}}.pdf", trait=traits),
         expand(f"{FOLDER}/results/{{trait}}/trait_sequence_corr_LnL_{{trait}}.pdf",trait=traits),
         expand(f"{FOLDER}/results/{{trait}}/trait_cross_corr_LnL_{{trait}}.pdf",trait=traits),
-        expand(f"{FOLDER}/results/{{trait}}/RevBayes_corr_scatter_{{method}}_{{trait}}.pdf",method=methods,trait=traits),
+        expand(f"{FOLDER}/results/{{trait}}/corr_switch_{{method}}_{{trait}}.pdf",method=methods,trait=traits),
 
 rule pre_processed_traits:
     input:
@@ -56,8 +57,7 @@ rule pre_processed_traits:
     log:
         stdout=f"{FOLDER}/data_processed/mammals/{{dataset}}_{{trait}}.preprocessed.log"
     params:
-        heritability=lambda wildcards, input, output: f"--input_heritability {input.input_heritability} " if wildcards.trait in [
-            "logTPM", "log2TPM"] else ""
+        heritability=lambda wildcards, input, output: f"--input_heritability {input.input_heritability} " if wildcards.trait in ["logTPM", "log2TPM"] else ""
     shell:
         'python3 {input.script} --input_dS {input.input_dS} --input_pS {input.input_pS} '
         '--input_traits {input.input_traits} --input_orthogroups {input.input_orthogroups} {params.heritability}'
@@ -232,13 +232,21 @@ rule plot_boxplots:
     shell:
         'python3 {input.script} --input_orthogroups {input.input_orthogroups} --tsv_traits {input.tsv_traits} --tsv_Bayes {input.tsv_Bayes} --output {output.tsv}'
 
-
-rule plot_corr:
+rule plot_dataset_corr:
     input:
-        script=f"{FOLDER}/scripts/plot_corr.py",
+        script=f"{FOLDER}/scripts/plot_dataset_corr.py",
         tsv_results=rules.merge_results.output.tsv
     output:
-        tsv=f"{FOLDER}/results/{{trait}}/corr_scatter_{{method}}_{{trait}}.pdf"
+        tsv=f"{FOLDER}/results/{{trait}}/corr_dataset_{{method}}_{{trait}}.pdf"
+    shell:
+        'python3 {input.script} --input {input.tsv_results} --output {output.tsv}'
+
+rule plot_method_corr:
+    input:
+        script=f"{FOLDER}/scripts/plot_method_corr.py",
+        tsv_results=expand(f"{FOLDER}/results/{{{{trait}}}}/merge_{{method}}.tsv", method=methods)
+    output:
+        tsv=f"{FOLDER}/results/{{trait}}/corr_method_{{trait}}.pdf"
     shell:
         'python3 {input.script} --input {input.tsv_results} --output {output.tsv}'
 
@@ -263,12 +271,12 @@ rule trait_cross_corr:
     shell:
         'python3 {input.script} --input {input.tsv_rho} --gene_table {input.gene_table} --cross_table {input.cross_table} --output {output.tsv}'
 
-rule plot_RevBayes_corr:
+rule plot_switch_corr:
     input:
-        script=f"{FOLDER}/scripts/plot_RevBayes_corr.py",
+        script=f"{FOLDER}/scripts/plot_switch_corr.py",
         tsv_results=rules.merge_results.output.tsv,
         tsv_RevBayes=rules.merge_RevBayes_results.output.tsv
     output:
-        tsv=f"{FOLDER}/results/{{trait}}/RevBayes_corr_scatter_{{method}}_{{trait}}.pdf"
+        tsv=f"{FOLDER}/results/{{trait}}/corr_switch_{{method}}_{{trait}}.pdf"
     shell:
         'python3 {input.script} --input_ratio {input.tsv_results} --input_switch {input.tsv_RevBayes} --output {output.tsv}'
