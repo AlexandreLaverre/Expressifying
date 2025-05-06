@@ -5,7 +5,8 @@ BURN_IN, UNTIL = 1000, 2000
 
 methods = ["Bayes", "LnL"]
 bgee_ortho = f"{FOLDER}/results/gene_expression_orthogroups"
-datasets = [i.replace(".csv", "") for i in os.listdir(f"{bgee_ortho}/log2TPM") if not i.startswith(".") and os.path.isfile(f"{bgee_ortho}/log2TPM/{i}")]
+datasets = [i.replace(".csv","") for i in os.listdir(f"{bgee_ortho}/log2TPM") if
+            not i.startswith(".") and os.path.isfile(f"{bgee_ortho}/log2TPM/{i}")]
 print(datasets)
 traits = ['log2TPM']
 oma_data = "OMA22"
@@ -14,7 +15,22 @@ heritability_path = f"{FOLDER}/data/heritability-gene-expression/41431_2019_511_
 polymorphism_path = f"{FOLDER}/data/science.abn5856.Ne/science.abn5856_table_s1.csv"
 divergence_path = f"{FOLDER}/data/science.abl8189.Timescale/Table_S2_RootedTrees/Concatenation_HRA_neutral_241_10miss_rooted.tree"
 
+exec_path = "/opt/homebrew/Caskroom/miniforge/base/envs/osx-64/bin/rb"
+if not os.path.exists(exec_path):
+    # Find executable in the path using whereis. If not found, raise an error.
+    split = os.popen(f'whereis rb').read().split()
+    if len(split) > 1:
+        exec_path = split[1].strip()
+    else:
+        raise FileNotFoundError(f'rb not found. Please install RevBayes and add it to your path.')
+print(f"Found rb at {exec_path}")
+
 ruleorder: read_trace > merge_traces
+ruleorder: run_RevBayes > gather_RevBayes_log
+
+wildcard_constraints:
+    # constrain to only alphanumeric characters and underscore
+    trait=r"[a-zA-Z0-9]+",method=r"[a-zA-Z]+",gene=r"[a-zA-Z0-9]+"
 
 
 rule all:
@@ -22,7 +38,8 @@ rule all:
         expand(f"{FOLDER}/results/{{trait}}/merged_boxplot_{{trait}}.pdf",trait=traits),
         expand(f"{FOLDER}/results/{{trait}}/corr_scatter_{{method}}_{{trait}}.pdf",method=methods,trait=traits),
         expand(f"{FOLDER}/results/{{trait}}/trait_sequence_corr_LnL_{{trait}}.pdf",trait=traits),
-        expand(f"{FOLDER}/results/{{trait}}/trait_cross_corr_LnL_{{trait}}.pdf",trait=traits)
+        expand(f"{FOLDER}/results/{{trait}}/trait_cross_corr_LnL_{{trait}}.pdf",trait=traits),
+        expand(f"{FOLDER}/results/{{trait}}/RevBayes_corr_scatter_{{method}}_{{trait}}.pdf",method=methods,trait=traits),
 
 rule pre_processed_traits:
     input:
@@ -69,12 +86,82 @@ checkpoint filter_traits:
         var_within=rules.pre_processed_traits.output.var_within,
         neutrality_index=rules.neutrality_index.output.tsv
     output:
-        dir=directory(f"{FOLDER}/data_processed/filtered/{{dataset}}_{{trait}}"),
+        dir=directory(f"{FOLDER}/data_processed/filtered/{{dataset}}_{{trait}}")
     log:
         stdout=f"{FOLDER}/data_processed/filtered/{{dataset}}_{{trait}}.preprocessed.log"
     shell:
         'python3 {input.script} --input_tree {input.tree} --input_traits {input.traits} --input_var_within {input.var_within} --neutrality_index {input.neutrality_index}'
         ' --output_dir {output.dir} > {log.stdout}'
+
+
+rule reconstructed_chronogram:
+    input:
+        script=f"{FOLDER}/scripts/calib_pl.R",
+        tree=f"{FOLDER}/data_processed/filtered/{{dataset}}_{{trait}}/{{gene}}.tree"
+    output:
+        tree=f"{FOLDER}/data_processed/filtered/{{dataset}}_{{trait}}/{{gene}}.timetree.newick"
+    shell:
+        'Rscript {input.script} {input.tree} {output.tree}'
+
+
+rule convert_to_RevBayes:
+    input:
+        script=f"{FOLDER}/scripts/convert_to_nexus.py",
+        nuc_tree=f"{FOLDER}/data_processed/filtered/{{dataset}}_{{trait}}/{{gene}}.tree",
+        time_tree=rules.reconstructed_chronogram.output.tree,
+        traits=f"{FOLDER}/data_processed/filtered/{{dataset}}_{{trait}}/{{gene}}.traits.tsv"
+    output:
+        nuc_tree=f"{FOLDER}/data_processed/filtered/{{dataset}}_{{trait}}/{{gene}}_nuctree.nex",
+        time_tree=f"{FOLDER}/data_processed/filtered/{{dataset}}_{{trait}}/{{gene}}_timetree.nex",
+        nexus_traits=f"{FOLDER}/data_processed/filtered/{{dataset}}_{{trait}}/{{gene}}.traits.nex"
+    shell:
+        'python3 {input.script} --input_nuctree {input.nuc_tree} --input_timetree {input.time_tree} --input_traits {input.traits} --output_traits {output.nexus_traits} --output_nuctree {output.nuc_tree} --output_timetree {output.time_tree}'
+
+
+rule run_RevBayes:
+    input:
+        exec=exec_path,
+        rev_file=f"{FOLDER}/scripts/mcmc_simple_BM_Switchnodes.Rev",
+        nuctree=rules.convert_to_RevBayes.output.nuc_tree,
+        timetree=rules.convert_to_RevBayes.output.time_tree,
+        traits=rules.convert_to_RevBayes.output.nexus_traits
+    output:
+        log=f"{FOLDER}/data_processed/RevBayes/{{dataset}}_{{trait}}/{{gene}}/simple_BM_Switchnodes.log.gz"
+    params:
+        folder=lambda wildcards: f"{FOLDER}/data_processed/RevBayes/{wildcards.dataset}_{wildcards.trait}/{wildcards.gene}"
+    shell:
+        'mkdir -p {params.folder};'
+        'cp {input.timetree} {params.folder}/tree_time.nex;'
+        'cp {input.nuctree} {params.folder}/tree_nuc.nex;'
+        'cp {input.traits} {params.folder}/traits.nex;'
+        'cd {params.folder} && {input.exec} {input.rev_file};'
+        'for f in ./*.log; do if [ -f $f ]; then gzip -f $f; fi; done;'
+
+
+def aggregate_genes(wildcards):
+    checkpoint_output = checkpoints.filter_traits.get(**wildcards).output[0]
+    return expand(f"{FOLDER}/data_processed/RevBayes/{{dataset}}_{{trait}}/{{gene}}/simple_BM_Switchnodes.log.gz",dataset=wildcards.dataset,trait=wildcards.trait,gene=glob_wildcards(os.path.join(checkpoint_output,"{gene}.tree")).gene)
+
+
+rule gather_RevBayes_log:
+    input: aggregate_genes
+    output:
+        tsv=f"{FOLDER}/results/Switchnodes_{{dataset}}_{{trait}}.tsv"
+    params:
+        plot = f"{FOLDER}/results/Switchnodes_{{dataset}}_{{trait}}.pdf",
+        folder=f"{FOLDER}/data_processed/RevBayes/{{dataset}}_{{trait}}"
+    shell:
+        'python3 {FOLDER}/scripts/gather_RevBayes_log.py --folder {params.folder} --output_pdf {params.plot} --output_tsv {output.tsv}'
+
+
+rule merge_RevBayes_results:
+    input:
+        script=f"{FOLDER}/scripts/merge_RevBayes_results.py",
+        tsv_results=expand(f"{FOLDER}/results/Switchnodes_{{dataset}}_{{{{trait}}}}.tsv",dataset=datasets)
+    output:
+        tsv=f"{FOLDER}/results/{{trait}}/switch_RevBayes.tsv"
+    shell:
+        'python3 {input.script} --tsv_results {input.tsv_results} --output {output.tsv}'
 
 
 rule run_inference:
@@ -83,10 +170,10 @@ rule run_inference:
         traits=f"{FOLDER}/data_processed/filtered/{{dataset}}_{{trait}}/{{gene}}.traits.tsv",
         tree=f"{FOLDER}/data_processed/filtered/{{dataset}}_{{trait}}/{{gene}}.tree"
     output:
-        run=f"{FOLDER}/data_processed/inference/{{dataset}}_{{trait}}/{{gene}}.run",
+        run=f"{FOLDER}/data_processed/inference/{{dataset}}_{{trait}}/{{gene}}.run"
     params:
         chain=f"{FOLDER}/data_processed/inference/{{dataset}}_{{trait}}/{{gene}}",
-        until=f"--until {UNTIL}",
+        until=f"--until {UNTIL}"
     log:
         stdout=f"{FOLDER}/data_processed/inference/{{dataset}}_{{trait}}/{{gene}}.log"
     shell:
@@ -99,7 +186,7 @@ rule read_trace:
         inference=f"{FOLDER}/data_processed/inference/{{dataset}}_{{trait}}/{{gene}}.run",
         var_within=f"{FOLDER}/data_processed/filtered/{{dataset}}_{{trait}}/{{gene}}.var_within.tsv"
     output:
-        tsv=f"{FOLDER}/data_processed/Bayes/{{dataset}}_{{trait}}/{{gene}}.tsv",
+        tsv=f"{FOLDER}/data_processed/Bayes/{{dataset}}_{{trait}}/{{gene}}.tsv"
     params:
         points=f"--burnin {BURN_IN} --until {UNTIL}",
         chain=lambda wildcards: f"{FOLDER}/data_processed/inference/{wildcards.dataset}_{wildcards.trait}/{wildcards.gene}"
@@ -117,7 +204,7 @@ def aggregate_input(wildcards):
 rule merge_traces:
     input: aggregate_input
     output:
-        tsv=f"{FOLDER}/data_processed/Bayes/{{dataset}}_{{trait}}.tsv",
+        tsv=f"{FOLDER}/data_processed/Bayes/{{dataset}}_{{trait}}.tsv"
     params:
         traces=f"{FOLDER}/data_processed/Bayes/{{dataset}}_{{trait}}"
     shell:
@@ -127,9 +214,9 @@ rule merge_traces:
 rule merge_results:
     input:
         script=f"{FOLDER}/scripts/merge_results.py",
-        tsv_results=expand(f"{FOLDER}/data_processed/{{{{method}}}}/{{dataset}}_{{{{trait}}}}.tsv",dataset=datasets),
+        tsv_results=expand(f"{FOLDER}/data_processed/{{{{method}}}}/{{dataset}}_{{{{trait}}}}.tsv",dataset=datasets)
     output:
-        tsv=f"{FOLDER}/results/{{trait}}/merge_{{method}}.tsv",
+        tsv=f"{FOLDER}/results/{{trait}}/merge_{{method}}.tsv"
     shell:
         'python3 {input.script} --tsv_results {input.tsv_results} --output {output.tsv}'
 
@@ -139,9 +226,9 @@ rule plot_boxplots:
         script=f"{FOLDER}/scripts/plot_boxplots.py",
         tsv_traits=expand(f"{bgee_ortho}/{{{{trait}}}}/{{dataset}}.csv",dataset=datasets),
         tsv_Bayes=f"{FOLDER}/results/{{trait}}/merge_Bayes.tsv",
-        input_orthogroups=orthologs_path,
+        input_orthogroups=orthologs_path
     output:
-        tsv=f"{FOLDER}/results/{{trait}}/merged_boxplot_{{trait}}.pdf",
+        tsv=f"{FOLDER}/results/{{trait}}/merged_boxplot_{{trait}}.pdf"
     shell:
         'python3 {input.script} --input_orthogroups {input.input_orthogroups} --tsv_traits {input.tsv_traits} --tsv_Bayes {input.tsv_Bayes} --output {output.tsv}'
 
@@ -149,16 +236,16 @@ rule plot_boxplots:
 rule plot_corr:
     input:
         script=f"{FOLDER}/scripts/plot_corr.py",
-        tsv_Bayes=f"{FOLDER}/results/{{trait}}/merge_{{method}}.tsv"
+        tsv_results=rules.merge_results.output.tsv
     output:
         tsv=f"{FOLDER}/results/{{trait}}/corr_scatter_{{method}}_{{trait}}.pdf"
     shell:
-        'python3 {input.script} --input {input.tsv_Bayes} --output {output.tsv}'
+        'python3 {input.script} --input {input.tsv_results} --output {output.tsv}'
 
 rule trait_sequence_corr:
     input:
         script=f"{FOLDER}/scripts/trait_sequence_corr.py",
-        tsv_rho=f"{FOLDER}/results/{{trait}}/merge_{{method}}.tsv",
+        tsv_rho=rules.merge_results.output.tsv,
         gene_table=f"{FOLDER}/data/adaptation/GeneTable.tsv"
     output:
         tsv=f"{FOLDER}/results/{{trait}}/trait_sequence_corr_{{method}}_{{trait}}.pdf"
@@ -168,10 +255,20 @@ rule trait_sequence_corr:
 rule trait_cross_corr:
     input:
         script=f"{FOLDER}/scripts/trait_cross_corr.py",
-        tsv_rho=f"{FOLDER}/results/{{trait}}/merge_{{method}}.tsv",
+        tsv_rho=rules.merge_results.output.tsv,
         gene_table=f"{FOLDER}/data/adaptation/GeneTable.tsv",
         cross_table=f"{FOLDER}/data/genetic_cross/mouse.csv"
     output:
         tsv=f"{FOLDER}/results/{{trait}}/trait_cross_corr_{{method}}_{{trait}}.pdf"
     shell:
         'python3 {input.script} --input {input.tsv_rho} --gene_table {input.gene_table} --cross_table {input.cross_table} --output {output.tsv}'
+
+rule plot_RevBayes_corr:
+    input:
+        script=f"{FOLDER}/scripts/plot_RevBayes_corr.py",
+        tsv_results=rules.merge_results.output.tsv,
+        tsv_RevBayes=rules.merge_RevBayes_results.output.tsv
+    output:
+        tsv=f"{FOLDER}/results/{{trait}}/RevBayes_corr_scatter_{{method}}_{{trait}}.pdf"
+    shell:
+        'python3 {input.script} --input_ratio {input.tsv_results} --input_switch {input.tsv_RevBayes} --output {output.tsv}'

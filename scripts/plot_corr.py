@@ -11,7 +11,7 @@ def main(tsv_input: str, output_pdf: str):
     min_trait = df_out["ratio"].min()
     max_trait = df_out["ratio"].max()
     datasets = sorted(set(df_out["dataset"]))
-    fig, axs = plt.subplots(nrows=len(datasets), ncols=len(datasets), figsize=(16, 16), sharex=True, sharey=True)
+    fig, axs = plt.subplots(nrows=len(datasets), ncols=len(datasets), figsize=(16, 16), sharex=True, sharey=True, dpi=300)
     for x_1, data_1 in enumerate(datasets):
         for x_2, data_2 in enumerate(datasets):
             df_1 = df_out[df_out["dataset"] == data_1]
