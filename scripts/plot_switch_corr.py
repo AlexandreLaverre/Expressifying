@@ -12,7 +12,7 @@ def main(tsv_input_ratio: str, tsv_input_switch: str, output_pdf: str):
     df_switch = pd.read_csv(tsv_input_switch, sep='\t')
     # Renamed the column "simu" to "trait" in df_switch
     df_switch.rename(columns={"simu": "trait", "dataset_switch": "dataset"}, inplace=True)
-    df_switch["dataset"] = df_switch["dataset"].apply(lambda x: x.replace("Switchnodes_", ""))
+    df_switch["dataset"] = df_switch["dataset"].apply(lambda x: "_".join(x.split("_")[1:]))
     df_join = pd.merge(df_trait, df_switch, on=["trait", "dataset"], suffixes=("_trait", "_switch"), how="inner")
     assert len(df_join) > 0, f"No overlap between {tsv_input_ratio} and {tsv_input_switch}"
     datasets = sorted(set(df_join["dataset"]))

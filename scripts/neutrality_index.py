@@ -143,7 +143,10 @@ def main(input_traits: str, input_tree: str, input_var_within: str, output_tsv: 
 
         sp_mean_pheno = {sp: v for sp, v in zip(trait_df["TaxonName"], trait_df[f"{trait}_mean"]) if np.isfinite(v)}
         keep_leaf = [leaf.name for leaf in tree.get_leaves() if leaf.name in sp_mean_pheno]
-        print(f'Found {len(keep_leaf)} species with a mean {trait}.')
+        print(f'Found {len(keep_leaf)} species.')
+        if len(keep_leaf) < 3:
+            print(f"Warning: not enough species, skipping {trait}.")
+            continue
         pruned_tree = prune_tree(tree, keep_leaf)
         assert len(pruned_tree.get_leaves()) == len(keep_leaf), "Error in the pruning of the tree."
         for leaf in pruned_tree.get_leaves():

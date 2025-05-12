@@ -87,7 +87,7 @@ def main(path_input_traits, path_input_orthogroups, path_input_heritability, pat
     df_traits = pd.read_csv(path_input_traits)
     df_traits = convert_orthogroups_df_to_ensg(df_traits, path_input_orthogroups)
     assert "species" in df_traits.columns
-    print(f"The trait dataframe has {len(df_traits)} rows before filtering taxa.")
+    print(f"The trait dataframe has {len(df_traits)} rows before filtering taxa, with {len(set(df_traits['species']))} species.")
     df_traits = df_traits[df_traits["species"].isin(set_taxa_names)]
     print(f"The trait dataframe has {len(df_traits)} rows after filtering taxa also in the tree.")
     df_traits.to_csv(path_output_traits.replace("traits.tsv", "dataframe.tsv"), sep="\t", index=False)

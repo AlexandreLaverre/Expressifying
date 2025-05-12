@@ -1,11 +1,9 @@
 import os
+from os.path import isdir
 import argparse
 from collections import defaultdict
-
 import numpy as np
 import pandas as pd
-from os.path import isdir
-from libraries_plot import vert_boxplot
 
 
 def format_label(l):
@@ -23,9 +21,8 @@ def get_number_taxa(nexus_file):
     return -1
 
 
-def main(folder, output_pdf, output_tsv):
-    for output in [output_pdf, output_tsv]:
-        os.makedirs(os.path.dirname(output), exist_ok=True)
+def main(folder, output_tsv):
+    os.makedirs(os.path.dirname(output_tsv), exist_ok=True)
     models = {"REML": "simple_BM_SwitchREML", "nodes": "simple_BM_Switchnodes"}
     x_input = {}
     output_dico = defaultdict(list)
@@ -56,8 +53,6 @@ def main(folder, output_pdf, output_tsv):
             # compute the mean across 100 points
             x_input[label] = [np.mean(p) for p in p_slice]
 
-    # vert_boxplot(x_input, "Support for Phylogram ($\\pi$)", output_pdf, yscale="uniform",
-    #              format_label=format_label, empirical=True, prior=0.5, var_name="\\pi")
     df = pd.DataFrame(output_dico)
     df.to_csv(output_tsv, sep="\t", index=False)
 
@@ -65,7 +60,6 @@ def main(folder, output_pdf, output_tsv):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('-f', '--folder', required=True, type=str, dest="folder", help="Input folder")
-    parser.add_argument('-o', '--output_pdf', required=True, type=str, dest="output_pdf", help="Output pdf path")
     parser.add_argument('-t', '--output_tsv', required=True, type=str, dest="output_tsv", help="Output tsv path")
     args = parser.parse_args()
-    main(args.folder, args.output_pdf, args.output_tsv)
+    main(args.folder, args.output_tsv)

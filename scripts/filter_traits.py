@@ -15,12 +15,9 @@ def main(input_tree, input_traits, input_var_within, neutrality_index, output_di
     df_var_within = pd.read_csv(input_var_within, sep="\t")
     df_neutrality_index = pd.read_csv(neutrality_index, sep="\t")
     df_neutrality_index = df_neutrality_index.sort_values(by="ratio", ascending=False)
-    greater_than_one = (df_neutrality_index["ratio"] > 0.0)
-    if greater_than_one.sum() == 0:
-        # Keep the 3 first traits
-        df_neutrality_index = df_neutrality_index.iloc[:3]
-    else:
-        df_neutrality_index = df_neutrality_index[greater_than_one]
+    enough_species = ((df_neutrality_index["nbr_taxa_between"] >= 5) & (df_neutrality_index["nbr_taxa_within"] >= 5))
+    print(f"Keeping {sum(enough_species)} traits with more than 5 species out of {len(df_neutrality_index)}")
+    df_neutrality_index = df_neutrality_index[enough_species]
 
     ortho_list = df_neutrality_index["trait"].tolist()
     set_taxa_names = set(tree.get_leaf_names())
@@ -33,7 +30,7 @@ def main(input_tree, input_traits, input_var_within, neutrality_index, output_di
         df_gene_within = df_var_within[columns].copy()
         df_gene_within = df_gene_within.dropna(subset=columns, how='all')
         gene_taxa_names = set_taxa_names.intersection(set(df_gene["TaxonName"].tolist()))
-        if len(gene_taxa_names) < 10:
+        if len(gene_taxa_names) < 5:
             print(f"Skipping {gene} because it has less than 10 taxa")
             continue
         gene_tree = prune_tree(tree, list(gene_taxa_names))
