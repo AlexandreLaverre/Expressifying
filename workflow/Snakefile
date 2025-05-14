@@ -10,7 +10,7 @@ print(datasets)
 traits = ['log2TPM']
 oma_data = "OMA22"
 methods = ["Bayes", "LnL"]
-clades = ["mammals", "primates"]
+clades = ["mammals", "primates", "nonMammalPrimates"]
 orthologs_path = f"{FOLDER}/data/gene_orthologies/one2one_orthogroups_{oma_data}_mammals.csv"
 heritability_path = f"{FOLDER}/data/heritability-gene-expression/41431_2019_511_MOESM2_ESM.tsv"
 mammals_polymorphism_path = f"{FOLDER}/data/science.abn5856.Ne/science.abn5856_table_s1.csv"
@@ -57,10 +57,23 @@ rule mammal_to_primate_tree:
     shell:
         'python3 {input.script} --mammal_tree {input.mammal_neutral_tree} --primate_tree {input.primate_tree} --output {output.tree} > {log.stdout}'
 
+rule mammal_to_nonprimate_tree:
+    input:
+        script=f"{FOLDER}/scripts/mammal_to_nonprimate_tree.py",
+        primate_tree=primate_tree_path,
+        mammal_neutral_tree=mammal_tree_path
+    output:
+        tree=f"{FOLDER}/data_processed/nonMammalPrimates.tree"
+    log:
+        stdout=f"{FOLDER}/data_processed/nonMammalPrimates.log"
+    shell:
+        'python3 {input.script} --mammal_tree {input.mammal_neutral_tree} --primate_tree {input.primate_tree} --output {output.tree} > {log.stdout}'
+
+
 rule pre_processed_traits:
     input:
         script=f"{FOLDER}/scripts/pre_processed_traits.py",
-        input_dS=lambda wildcards: mammal_tree_path if wildcards.clade == "mammals" else rules.mammal_to_primate_tree.output.tree,
+        input_dS=lambda wildcards: mammal_tree_path if wildcards.clade == "mammals" else f"{FOLDER}/data_processed/{wildcards.clade}.tree",
         input_pS=mammals_polymorphism_path,
         input_traits=f"{bgee_ortho}/{{trait}}/{{dataset}}.csv",
         input_orthogroups=orthologs_path,
@@ -87,7 +100,7 @@ rule neutrality_index:
     output:
         tsv=f"{FOLDER}/data_processed/LnL_{{clade}}/{{dataset}}_{{trait}}.tsv"
     params:
-        script = f"{FOLDER}/scripts/neutrality_index.py",
+        script=f"{FOLDER}/scripts/neutrality_index.py",
     log:
         stdout=f"{FOLDER}/data_processed/LnL_{{clade}}/{{dataset}}_{{trait}}.processed.log"
     shell:
