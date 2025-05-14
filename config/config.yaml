@@ -1,0 +1,6 @@
+TRAITS: ["log2TPM"]
+OMA_DATA: "OMA22"
+METHODS: ["Bayes", "LnL"]
+CLADES: ["mammals", "primates", "nonMammalPrimates"]
+BURN_IN: 100
+UNTIL: 200
