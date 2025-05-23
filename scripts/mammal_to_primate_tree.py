@@ -29,11 +29,14 @@ def main(primate_tree, mammal_tree, output_tree):
     keep_species = list(set(t_primate.get_leaf_names()).difference(set(discard_list)))
     t_primate = prune_tree(t_primate, keep_species)
     t_mammal = rename_tree(open_tree(mammal_tree, format_ete3=1))
+    # Find the ancestor of the primate tree in the mammal tree
     intersection = list(set(t_primate.get_leaf_names()).intersection(set(t_mammal.get_leaf_names())))
     print(f"Intersection between mammals and primates has {len(intersection)} leaves")
-    pruned_primate = prune_tree(t_primate, intersection)
-    t_mammal = prune_tree(t_mammal, intersection)
-    assert set(pruned_primate.get_leaf_names()) == set(t_mammal.get_leaf_names())
+    ancestor = t_mammal.get_common_ancestor(intersection)
+    primate_leaves = ancestor.get_leaf_names()
+    print(f"The ancestor of the primate tree in the mammal tree has {len(primate_leaves)} leaves")
+    t_mammal = prune_tree(t_mammal, primate_leaves)
+    assert set(primate_leaves) == set(t_mammal.get_leaf_names())
     t_mammal.write(outfile=output_tree, format=1)
 
 if __name__ == '__main__':

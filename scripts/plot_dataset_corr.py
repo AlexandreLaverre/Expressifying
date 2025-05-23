@@ -4,24 +4,23 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 
-def main(tsv_input: str, output_pdf: str):
-    output_dir = os.path.dirname(output_pdf)
-    os.makedirs(output_dir, exist_ok=True)
+def main(tsv_input: str, output_file: str):
+    os.makedirs(os.path.dirname(output_file), exist_ok=True)
     df_out = pd.read_csv(tsv_input, sep='\t')
     datasets = sorted(set(df_out["dataset"]))
     gp = {group: df_group for group, df_group in df_out.groupby("dataset")}
-    fig, axs = plt.subplots(nrows=len(datasets), ncols=len(datasets), sharex=True, sharey=True,
-                            figsize=(len(datasets) * 5, len(datasets) * 4))
+    fig, axs = plt.subplots(nrows=len(datasets), ncols=len(datasets),
+                            figsize=(len(datasets) * 8, len(datasets) * 6))
     for x_1, data_1 in enumerate(datasets):
         for x_2, data_2 in enumerate(datasets):
             df_1 = gp[data_1]
             df_2 = gp[data_2]
             joint_df = pd.merge(df_1, df_2, on="trait", suffixes=("_1", "_2"), how="inner")
-            joint_df["qcut"] = pd.qcut(joint_df["ratio_1"], q=50)
+            joint_df["qcut"] = pd.qcut(joint_df["ratio_1"], q=min(35, len(joint_df) // 2), duplicates="drop")
             cols = ["ratio_1", "ratio_2"]
             if "pp_ratio_greater_1" in df_1.columns and "pp_ratio_greater_1" in df_2.columns:
                 cols += ["pp_ratio_greater_1_1", "pp_ratio_greater_1_2"]
-            joint_df = joint_df.groupby("qcut", observed=False).agg({col: "mean" for col in cols}).reset_index()
+            # joint_df = joint_df.groupby("qcut", observed=False).agg({col: "mean" for col in cols}).reset_index()
             ax = axs[x_1, x_2] if len(datasets) > 1 else axs
             ax.set_xlabel(f"{data_1} ratio")
             ax.set_ylabel(f"{data_2} ratio")
@@ -48,11 +47,11 @@ def main(tsv_input: str, output_pdf: str):
                 if sum(pp1_pp2) == 0:
                     continue
                 label = f"{l} (n={sum(pp1_pp2)})".capitalize()
-                ax.scatter(joint_df["ratio_1"][pp1_pp2], joint_df["ratio_2"][pp1_pp2], c=c, label=label)
-                ax.set_title(f"{len(joint_df)} bins ($R^2$={corr * corr:.2f})")
+                ax.scatter(joint_df["ratio_1"][pp1_pp2], joint_df["ratio_2"][pp1_pp2], c=c, label=label, alpha=0.25)
+                ax.set_title(f"$R^2$={corr * corr:.2f} (n={len(joint_df)})")
             ax.legend()
     plt.tight_layout()
-    plt.savefig(output_pdf)
+    plt.savefig(output_file)
     plt.close("all")
     plt.clf()
 
@@ -60,6 +59,6 @@ def main(tsv_input: str, output_pdf: str):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("--input", help="Input tsv file", required=False)
-    parser.add_argument("--output", help="Output pdf file", required=True)
+    parser.add_argument("--output", help="Output file", required=True)
     args = parser.parse_args()
     main(args.input, args.output)

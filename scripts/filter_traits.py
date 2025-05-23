@@ -13,6 +13,10 @@ def main(input_tree, input_traits, input_var_within, neutrality_index, output_di
     tree = open_tree(input_tree, format_ete3=1)
     df_traits = pd.read_csv(input_traits, sep="\t")
     df_var_within = pd.read_csv(input_var_within, sep="\t")
+    # If empty neutrality index file, skip the step
+    if "".join(open(neutrality_index).readlines()).strip() == "":
+        print(f"Neutrality index file {neutrality_index} is empty, skipping the step")
+        return
     df_neutrality_index = pd.read_csv(neutrality_index, sep="\t")
     df_neutrality_index = df_neutrality_index.sort_values(by="ratio", ascending=False)
     enough_species = ((df_neutrality_index["nbr_taxa_between"] >= 5) & (df_neutrality_index["nbr_taxa_within"] >= 5))
@@ -31,7 +35,7 @@ def main(input_tree, input_traits, input_var_within, neutrality_index, output_di
         df_gene_within = df_gene_within.dropna(subset=columns, how='all')
         gene_taxa_names = set_taxa_names.intersection(set(df_gene["TaxonName"].tolist()))
         if len(gene_taxa_names) < 5:
-            print(f"Skipping {gene} because it has less than 10 taxa")
+            print(f"Skipping {gene} because it has less than 5 taxa")
             continue
         gene_tree = prune_tree(tree, list(gene_taxa_names))
 

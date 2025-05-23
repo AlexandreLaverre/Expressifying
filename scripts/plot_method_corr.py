@@ -14,6 +14,7 @@ def main(tsv_input: list, output_pdf: str):
     df_1 = pd.read_csv(tsv_input[0], sep='\t')
     df_2 = pd.read_csv(tsv_input[1], sep='\t')
     df_out = pd.merge(df_1, df_2, on=["trait", "dataset"], suffixes=(f"_{method_1}", f"_{method_2}"), how="inner")
+    df_out = df_out[(df_out[f"ratio_{method_1}"] > 0) & (df_out[f"ratio_{method_2}"] > 0)]
     min_trait = min(df_out[f"ratio_{method_1}"].min(), df_out[f"ratio_{method_2}"].min())
     max_trait = max(df_out[f"ratio_{method_1}"].max(), df_out[f"ratio_{method_2}"].max())
     datasets = sorted(set(df_out["dataset"]))

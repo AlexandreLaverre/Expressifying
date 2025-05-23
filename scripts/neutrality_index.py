@@ -121,18 +121,8 @@ def main(input_traits: str, input_tree: str, input_var_within: str, output_tsv: 
     output_dict = defaultdict(list)
     for trait in traits:
         print(f"\nProcessing phenotype {trait}.")
-        h, h_low, h_up = f"{trait}_heritability", f"{trait}_heritability_lower", f"{trait}_heritability_upper"
-        if h_low in var_pop_df.columns and h_up in var_pop_df.columns:
-            print(f"Found upper and lower bound for heritability of {trait}.")
-            print(f"Using the mean of the confidence interval.")
-            trait_h = var_pop_df[[h_low, h_up]].mean(axis=1)
-        elif f"{trait}_heritability" in var_pop_df.columns:
-            print(f"Found heritability for {trait}.")
-            trait_h = var_pop_df[h]
-        else:
-            print(f"Warning: column {trait}_heritability not found in {input_var_within}.")
-            print("Assuming heritability = 1.0.")
-            trait_h = np.array([1.0] * len(var_pop_df))
+        print("Assuming heritability = 1.0.")
+        trait_h = np.array([1.0] * len(var_pop_df))
         notna = (np.isfinite(var_pop_df[f"{trait}_variance"]) & (var_pop_df[f"{trait}_variance"] > 0.0))
         notna = (notna & (np.isfinite(trait_h) & (trait_h >= 0.0) & (trait_h <= 1.0)))
         # Computing the genetic variance (geno = h² * pheno)
@@ -144,7 +134,7 @@ def main(input_traits: str, input_tree: str, input_var_within: str, output_tsv: 
         sp_mean_pheno = {sp: v for sp, v in zip(trait_df["TaxonName"], trait_df[f"{trait}_mean"]) if np.isfinite(v)}
         keep_leaf = [leaf.name for leaf in tree.get_leaves() if leaf.name in sp_mean_pheno]
         print(f'Found {len(keep_leaf)} species.')
-        if len(keep_leaf) < 3:
+        if len(keep_leaf) < 5:
             print(f"Warning: not enough species, skipping {trait}.")
             continue
         pruned_tree = prune_tree(tree, keep_leaf)

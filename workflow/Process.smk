@@ -4,7 +4,8 @@ configfile: 'config/config.yaml'
 BURN_IN, UNTIL = config['BURN_IN'], config['UNTIL']
 
 FOLDER = os.path.abspath('.')
-bgee_ortho = f"{FOLDER}/results/gene_expression_orthogroups"
+SNAKERUN = config["SNAKERUN"] if "SNAKERUN" in config else ""
+bgee_ortho = f"{FOLDER}/data/gene_expression_orthogroups_15_2"
 datasets = [i.replace(".csv","") for i in os.listdir(f"{bgee_ortho}/log2TPM") if
             not i.startswith(".") and os.path.isfile(f"{bgee_ortho}/log2TPM/{i}")]
 print(datasets)
@@ -18,29 +19,14 @@ mammals_polymorphism_path = f"{FOLDER}/data/science.abn5856.Ne/science.abn5856_t
 mammal_tree_path = f"{FOLDER}/data/science.abl8189.Timescale/Table_S2_RootedTrees/Concatenation_HRA_neutral_241_10miss_rooted.tree"
 primate_tree_path = f"{FOLDER}/data/science.abn7829.primates/science.abn7829_data_s3.nw.tree"
 
-exec_path = "/opt/homebrew/Caskroom/miniforge/base/envs/osx-64/bin/rb"
-if not os.path.exists(exec_path):
-    # Find executable in the path using whereis. If not found, raise an error.
-    split = os.popen(f'whereis rb').read().split()
-    if len(split) > 1:
-        exec_path = split[1].strip()
-    else:
-        raise FileNotFoundError(f'rb not found. Please install RevBayes and add it to your path.')
-print(f"Found rb at {exec_path}")
-
-ruleorder: read_trace > merge_traces
-ruleorder: run_RevBayes > gather_RevBayes_log
-
 wildcard_constraints:
     # constrain to only alphanumeric characters and underscore
-    trait=r"[a-zA-Z0-9]+",method=r"[a-zA-Z]+",gene=r"[a-zA-Z0-9]+",clade=r"[a-zA-Z]+"
-
+    trait=r"[a-zA-Z0-9]+",method=r"[a-zA-Z]+",clade=r"[a-zA-Z]+"
 
 rule all:
     input:
-        expand(f"{FOLDER}/results/{{trait}}_{{clade}}/switch_RevBayes.tsv",trait=traits,clade=clades),
-        expand(f"{FOLDER}/results/{{trait}}_{{clade}}/merge_{{method}}.tsv",method=methods,trait=traits,clade=clades),
-
+        expand(f"{FOLDER}/data_merged/{{trait}}_{{clade}}/switch_RevBayes.tsv",trait=traits,clade=clades),
+        expand(f"{FOLDER}/data_merged/{{trait}}_{{clade}}/merge_{{method}}.tsv",method=methods,trait=traits,clade=clades),
 
 rule mammal_to_primate_tree:
     input:
@@ -60,9 +46,9 @@ rule mammal_to_nonprimate_tree:
         primate_tree=primate_tree_path,
         mammal_neutral_tree=mammal_tree_path
     output:
-        tree=f"{FOLDER}/data_processed/nonMammalPrimates.tree"
+        tree=f"{FOLDER}/data_processed/NoPrimates.tree"
     log:
-        stdout=f"{FOLDER}/data_processed/nonMammalPrimates.log"
+        stdout=f"{FOLDER}/data_processed/NoPrimates.log"
     shell:
         'python3 {input.script} --mammal_tree {input.mammal_neutral_tree} --primate_tree {input.primate_tree} --output {output.tree} > {log.stdout}'
 
@@ -104,8 +90,7 @@ rule neutrality_index:
         'python3 {params.script} --tree {input.tree} --traits {input.traits} --var_within {input.var_within}'
         ' --output {output.tsv} > {log.stdout}'
 
-
-checkpoint filter_traits:
+rule filter_traits:
     input:
         script=f"{FOLDER}/scripts/filter_traits.py",
         tree=rules.pre_processed_traits.output.tree,
@@ -120,128 +105,40 @@ checkpoint filter_traits:
         'python3 {input.script} --input_tree {input.tree} --input_traits {input.traits} --input_var_within {input.var_within} --neutrality_index {input.neutrality_index}'
         ' --output_dir {output.dir} > {log.stdout}'
 
-
-rule reconstructed_chronogram:
-    input:
-        script=f"{FOLDER}/scripts/calib_pl.R",
-        tree=f"{FOLDER}/data_processed/filtered_{{clade}}/{{dataset}}_{{trait}}/{{gene}}.tree"
-    output:
-        tree=f"{FOLDER}/data_processed/filtered_{{clade}}/{{dataset}}_{{trait}}/{{gene}}.timetree.newick"
-    shell:
-        'Rscript {input.script} {input.tree} {output.tree}'
-
-
-rule convert_to_RevBayes:
-    input:
-        script=f"{FOLDER}/scripts/convert_to_nexus.py",
-        nuc_tree=f"{FOLDER}/data_processed/filtered_{{clade}}/{{dataset}}_{{trait}}/{{gene}}.tree",
-        time_tree=rules.reconstructed_chronogram.output.tree,
-        traits=f"{FOLDER}/data_processed/filtered_{{clade}}/{{dataset}}_{{trait}}/{{gene}}.traits.tsv"
-    output:
-        nuc_tree=f"{FOLDER}/data_processed/filtered_{{clade}}/{{dataset}}_{{trait}}/{{gene}}_nuctree.nex",
-        time_tree=f"{FOLDER}/data_processed/filtered_{{clade}}/{{dataset}}_{{trait}}/{{gene}}_timetree.nex",
-        nexus_traits=f"{FOLDER}/data_processed/filtered_{{clade}}/{{dataset}}_{{trait}}/{{gene}}.traits.nex"
-    shell:
-        'python3 {input.script} --input_nuctree {input.nuc_tree} --input_timetree {input.time_tree} --input_traits {input.traits} --output_traits {output.nexus_traits} --output_nuctree {output.nuc_tree} --output_timetree {output.time_tree}'
-
-
 rule run_RevBayes:
     input:
-        exec=exec_path,
-        rev_file=f"{FOLDER}/scripts/mcmc_simple_BM_Switchnodes.Rev",
-        nuctree=rules.convert_to_RevBayes.output.nuc_tree,
-        timetree=rules.convert_to_RevBayes.output.time_tree,
-        traits=rules.convert_to_RevBayes.output.nexus_traits
-    output:
-        log=f"{FOLDER}/data_processed/RevBayes_{{clade}}/{{dataset}}_{{trait}}/{{gene}}/simple_BM_Switchnodes.log.gz"
-    params:
-        folder=lambda wildcards: f"{FOLDER}/data_processed/RevBayes_{wildcards.clade}/{wildcards.dataset}_{wildcards.trait}/{wildcards.gene}"
-    shell:
-        'mkdir -p {params.folder};'
-        'cp {input.timetree} {params.folder}/tree_time.nex;'
-        'cp {input.nuctree} {params.folder}/tree_nuc.nex;'
-        'cp {input.traits} {params.folder}/traits.nex;'
-        'cd {params.folder} && {input.exec} {input.rev_file};'
-        'for f in ./*.log; do if [ -f $f ]; then gzip -f $f; fi; done;'
-
-
-def aggregate_genes(wildcards):
-    checkpoint_output = checkpoints.filter_traits.get(**wildcards).output[0]
-    return expand(f"{FOLDER}/data_processed/RevBayes_{{clade}}/{{dataset}}_{{trait}}/{{gene}}/simple_BM_Switchnodes.log.gz",clade=wildcards.clade,dataset=wildcards.dataset,trait=wildcards.trait,gene=glob_wildcards(os.path.join(checkpoint_output,"{gene}.tree")).gene)
-
-
-rule gather_RevBayes_log:
-    input: aggregate_genes
+        smk=f"{FOLDER}/workflow/RevBayes.smk",
+        dir=rules.filter_traits.output.dir,
     output:
         tsv=f"{FOLDER}/data_processed/Switchnodes/{{clade}}_{{dataset}}_{{trait}}.tsv"
-    params:
-        folder=f"{FOLDER}/data_processed/RevBayes_{{clade}}/{{dataset}}_{{trait}}"
+    threads: workflow.cores
     shell:
-        'python3 {FOLDER}/scripts/gather_RevBayes_log.py --folder {params.folder} --output_tsv {output.tsv}'
-
+        "cd {input.dir}; snakemake {SNAKERUN} --rerun-incomplete -k -s {input.smk} -j {threads} --config clade={wildcards.clade} dataset={wildcards.dataset} trait={wildcards.trait}"
 
 rule merge_RevBayes_results:
     input:
         script=f"{FOLDER}/scripts/merge_RevBayes_results.py",
         tsv_results=expand(f"{FOLDER}/data_processed/Switchnodes/{{{{clade}}}}_{{dataset}}_{{{{trait}}}}.tsv",dataset=datasets)
     output:
-        tsv=f"{FOLDER}/results/{{trait}}_{{clade}}/switch_RevBayes.tsv"
+        tsv=f"{FOLDER}/data_merged/{{trait}}_{{clade}}/switch_RevBayes.tsv"
     shell:
         'python3 {input.script} --tsv_results {input.tsv_results} --output {output.tsv}'
 
-
-rule run_inference:
+rule run_BayesCode:
     input:
-        exec=f"{FOLDER}/utils/BayesCode/bin/nodetraits",
-        traits=f"{FOLDER}/data_processed/filtered_{{clade}}/{{dataset}}_{{trait}}/{{gene}}.traits.tsv",
-        tree=f"{FOLDER}/data_processed/filtered_{{clade}}/{{dataset}}_{{trait}}/{{gene}}.tree"
+        smk=f"{FOLDER}/workflow/BayesCode.smk",
+        dir=rules.filter_traits.output.dir,
     output:
-        run=f"{FOLDER}/data_processed/inference_{{clade}}/{{dataset}}_{{trait}}/{{gene}}.run"
-    params:
-        chain=f"{FOLDER}/data_processed/inference_{{clade}}/{{dataset}}_{{trait}}/{{gene}}",
-        until=f"--until {UNTIL}"
-    log:
-        stdout=f"{FOLDER}/data_processed/inference_{{clade}}/{{dataset}}_{{trait}}/{{gene}}.log"
+        tsv=f"{FOLDER}/data_processed/BayesCode_{{clade}}/{{dataset}}_{{trait}}.tsv"
+    threads: workflow.cores
     shell:
-        '{input.exec} {params.until} --uniq_kappa --df 1 --tree {input.tree} --traitsfile {input.traits} {params.chain} &> {log.stdout}'
-
-
-rule read_trace:
-    input:
-        exec=f"{FOLDER}/utils/BayesCode/bin/readnodetraits",
-        inference=f"{FOLDER}/data_processed/inference_{{clade}}/{{dataset}}_{{trait}}/{{gene}}.run",
-        var_within=f"{FOLDER}/data_processed/filtered_{{clade}}/{{dataset}}_{{trait}}/{{gene}}.var_within.tsv"
-    output:
-        tsv=f"{FOLDER}/data_processed/Bayes_{{clade}}/{{dataset}}_{{trait}}/{{gene}}.tsv"
-    params:
-        points=f"--burnin {BURN_IN} --until {UNTIL}",
-        chain=lambda wildcards: f"{FOLDER}/data_processed/inference_{wildcards.clade}/{wildcards.dataset}_{wildcards.trait}/{wildcards.gene}"
-    log:
-        stdout=f"{FOLDER}/data_processed/Bayes_{{clade}}/{{dataset}}_{{trait}}/{{gene}}.trace.log"
-    shell:
-        '{input.exec} {params.points} --var_within {input.var_within} --output {output.tsv} {params.chain} &> {log.stdout} && gzip -f {params.chain}.chain && gzip -f {params.chain}.trace'
-
-
-def aggregate_input(wildcards):
-    checkpoint_output = checkpoints.filter_traits.get(**wildcards).output[0]
-    return expand(f"{FOLDER}/data_processed/Bayes_{{clade}}/{{dataset}}_{{trait}}/{{gene}}.tsv",clade=wildcards.clade,dataset=wildcards.dataset,trait=wildcards.trait,gene=glob_wildcards(os.path.join(checkpoint_output,"{gene}.tree")).gene)
-
-
-rule merge_traces:
-    input: aggregate_input
-    output:
-        tsv=f"{FOLDER}/data_processed/Bayes_{{clade}}/{{dataset}}_{{trait}}.tsv"
-    params:
-        traces=f"{FOLDER}/data_processed/Bayes_{{clade}}/{{dataset}}_{{trait}}"
-    shell:
-        'python3 {FOLDER}/scripts/merge_traces.py --input {params.traces} --output {output.tsv}'
-
+        "cd {input.dir}; snakemake {SNAKERUN} --rerun-incomplete  -k -s {input.smk} -j {threads} --config clade={wildcards.clade} dataset={wildcards.dataset} trait={wildcards.trait} UNTIL={UNTIL} BURN_IN={BURN_IN}"
 
 rule merge_results:
     input:
         script=f"{FOLDER}/scripts/merge_results.py",
         tsv_results=expand(f"{FOLDER}/data_processed/{{{{method}}}}_{{{{clade}}}}/{{dataset}}_{{{{trait}}}}.tsv",dataset=datasets)
     output:
-        tsv=f"{FOLDER}/results/{{trait}}_{{clade}}/merge_{{method}}.tsv"
+        tsv=f"{FOLDER}/data_merged/{{trait}}_{{clade}}/merge_{{method}}.tsv"
     shell:
         'python3 {input.script} --tsv_results {input.tsv_results} --output {output.tsv}'

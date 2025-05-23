@@ -3,7 +3,7 @@ import os
 configfile: 'config/config.yaml'
 
 FOLDER = os.path.abspath('.')
-bgee_ortho = f"{FOLDER}/results/gene_expression_orthogroups"
+bgee_ortho = f"{FOLDER}/data/gene_expression_orthogroups_15_2"
 datasets = [i.replace(".csv","") for i in os.listdir(f"{bgee_ortho}/log2TPM") if
             not i.startswith(".") and os.path.isfile(f"{bgee_ortho}/log2TPM/{i}")]
 print(datasets)
@@ -15,84 +15,83 @@ orthologs_path = f"{FOLDER}/data/gene_orthologies/one2one_orthogroups_{oma_data}
 
 wildcard_constraints:
     # constrain to only alphanumeric characters and underscore
-    trait=r"[a-zA-Z0-9]+",method=r"[a-zA-Z]+",gene=r"[a-zA-Z0-9]+",clade=r"[a-zA-Z]+"
-
+    trait=r"[a-zA-Z0-9]+",method=r"[a-zA-Z]+",clade=r"[a-zA-Z]+"
 
 rule all:
     input:
-        expand(f"{FOLDER}/results/{{trait}}_{{clade}}/merged_boxplot_{{trait}}.pdf",trait=traits,clade=clades),
-        expand(f"{FOLDER}/results/{{trait}}_{{clade}}/corr_dataset_{{method}}_{{trait}}.pdf",method=methods,trait=traits,clade=clades),
-        expand(f"{FOLDER}/results/{{trait}}_{{clade}}/corr_method_{{trait}}.pdf",trait=traits,clade=clades),
-        expand(f"{FOLDER}/results/{{trait}}_{{clade}}/trait_sequence_corr_LnL_{{trait}}.pdf",trait=traits,clade=clades),
-        expand(f"{FOLDER}/results/{{trait}}_{{clade}}/trait_cross_corr_LnL_{{trait}}.pdf",trait=traits,clade=clades),
+        expand(f"{FOLDER}/results/{{trait}}_{{clade}}/corr_dataset_{{method}}_{{trait}}.png",method=methods,trait=traits,clade=clades),
         expand(f"{FOLDER}/results/{{trait}}_{{clade}}/corr_switch_{{method}}_{{trait}}.pdf",method=methods,trait=traits,clade=clades),
+        expand(f"{FOLDER}/results/{{trait}}_{{clade}}/trait_sequence_corr_{{method}}_{{trait}}.pdf",method=methods, trait=traits,clade=clades),
+        expand(f"{FOLDER}/results/{{trait}}_{{clade}}/trait_cross_corr_{{organ}}_{{method}}_{{trait}}.pdf",method=methods, trait=traits, clade=clades, organ=["liver","nucleus"]),
+        expand(f"{FOLDER}/results/{{trait}}_{{clade}}/merged_boxplot_{{trait}}.pdf",trait=traits,clade=clades),
+        expand(f"{FOLDER}/results/{{trait}}_{{clade}}/corr_method_{{trait}}.png",trait=traits,clade=clades),
         expand(f"{FOLDER}/results/{{trait}}_corr_clade_{{method}}.pdf",method=methods,trait=traits)
 
 rule plot_boxplots:
     input:
         script=f"{FOLDER}/scripts/plot_boxplots.py",
         tsv_traits=expand(f"{bgee_ortho}/{{{{trait}}}}/{{dataset}}.csv",dataset=datasets),
-        tsv_Bayes=f"{FOLDER}/results/{{trait}}_{{clade}}/merge_Bayes.tsv",
+        tsv_Bayes=f"{FOLDER}/data_merged/{{trait}}_{{clade}}/merge_Bayes.tsv",
         input_orthogroups=orthologs_path
     output:
-        pdf=f"{FOLDER}/results/{{trait}}_{{clade}}/merged_boxplot_{{trait}}.pdf"
+        plot=f"{FOLDER}/results/{{trait}}_{{clade}}/merged_boxplot_{{trait}}.pdf"
     shell:
-        'python3 {input.script} --input_orthogroups {input.input_orthogroups} --tsv_traits {input.tsv_traits} --tsv_Bayes {input.tsv_Bayes} --output {output.pdf}'
+        'python3 {input.script} --input_orthogroups {input.input_orthogroups} --tsv_traits {input.tsv_traits} --tsv_Bayes {input.tsv_Bayes} --output {output.plot}'
 
 rule plot_dataset_corr:
     input:
         script=f"{FOLDER}/scripts/plot_dataset_corr.py",
-        tsv_results=f"{FOLDER}/results/{{trait}}_{{clade}}/merge_{{method}}.tsv"
+        tsv_results=f"{FOLDER}/data_merged/{{trait}}_{{clade}}/merge_{{method}}.tsv"
     output:
-        tsv=f"{FOLDER}/results/{{trait}}_{{clade}}/corr_dataset_{{method}}_{{trait}}.pdf"
+        plot=f"{FOLDER}/results/{{trait}}_{{clade}}/corr_dataset_{{method}}_{{trait}}.png"
     shell:
-        'python3 {input.script} --input {input.tsv_results} --output {output.tsv}'
+        'python3 {input.script} --input {input.tsv_results} --output {output.plot}'
 
 rule plot_method_corr:
     input:
         script=f"{FOLDER}/scripts/plot_method_corr.py",
-        tsv_results=expand(f"{FOLDER}/results/{{{{trait}}}}_{{{{clade}}}}/merge_{{method}}.tsv",method=methods)
+        tsv_results=expand(f"{FOLDER}/data_merged/{{{{trait}}}}_{{{{clade}}}}/merge_{{method}}.tsv",method=methods)
     output:
-        tsv=f"{FOLDER}/results/{{trait}}_{{clade}}/corr_method_{{trait}}.pdf"
+        plot=f"{FOLDER}/results/{{trait}}_{{clade}}/corr_method_{{trait}}.png"
     shell:
-        'python3 {input.script} --input {input.tsv_results} --output {output.tsv}'
+        'python3 {input.script} --input {input.tsv_results} --output {output.plot}'
 
 rule trait_sequence_corr:
     input:
         script=f"{FOLDER}/scripts/trait_sequence_corr.py",
-        tsv_rho=f"{FOLDER}/results/{{trait}}_{{clade}}/merge_{{method}}.tsv",
+        tsv_rho=f"{FOLDER}/data_merged/{{trait}}_{{clade}}/merge_{{method}}.tsv",
         gene_table=f"{FOLDER}/data/adaptation/GeneTable.tsv"
     output:
-        tsv=f"{FOLDER}/results/{{trait}}_{{clade}}/trait_sequence_corr_{{method}}_{{trait}}.pdf"
+        plot=f"{FOLDER}/results/{{trait}}_{{clade}}/trait_sequence_corr_{{method}}_{{trait}}.pdf"
     shell:
-        'python3 {input.script} --input {input.tsv_rho} --gene_table {input.gene_table} --output {output.tsv}'
+        'python3 {input.script} --input {input.tsv_rho} --gene_table {input.gene_table} --output {output.plot}'
 
 rule trait_cross_corr:
     input:
         script=f"{FOLDER}/scripts/trait_cross_corr.py",
-        tsv_rho=f"{FOLDER}/results/{{trait}}_{{clade}}/merge_{{method}}.tsv",
+        tsv_rho=f"{FOLDER}/data_merged/{{trait}}_{{clade}}/merge_{{method}}.tsv",
         gene_table=f"{FOLDER}/data/adaptation/GeneTable.tsv",
-        cross_table=f"{FOLDER}/data/genetic_cross/mouse.csv"
+        cross_table=f"{FOLDER}/data/genetic_cross/mouse_{{organ}}.csv"
     output:
-        pdf=f"{FOLDER}/results/{{trait}}_{{clade}}/trait_cross_corr_{{method}}_{{trait}}.pdf"
+        plot=f"{FOLDER}/results/{{trait}}_{{clade}}/trait_cross_corr_{{organ}}_{{method}}_{{trait}}.pdf"
     shell:
-        'python3 {input.script} --input {input.tsv_rho} --gene_table {input.gene_table} --cross_table {input.cross_table} --output {output.pdf}'
+        'python3 {input.script} --input {input.tsv_rho} --gene_table {input.gene_table} --cross_table {input.cross_table} --output {output.plot}'
 
 rule plot_switch_corr:
     input:
         script=f"{FOLDER}/scripts/plot_switch_corr.py",
-        tsv_results=f"{FOLDER}/results/{{trait}}_{{clade}}/merge_{{method}}.tsv",
-        tsv_RevBayes=f"{FOLDER}/results/{{trait}}_{{clade}}/switch_RevBayes.tsv"
+        tsv_results=f"{FOLDER}/data_merged/{{trait}}_{{clade}}/merge_{{method}}.tsv",
+        tsv_RevBayes=f"{FOLDER}/data_merged/{{trait}}_{{clade}}/switch_RevBayes.tsv"
     output:
-        pdf=f"{FOLDER}/results/{{trait}}_{{clade}}/corr_switch_{{method}}_{{trait}}.pdf"
+        plot=f"{FOLDER}/results/{{trait}}_{{clade}}/corr_switch_{{method}}_{{trait}}.pdf"
     shell:
-        'python3 {input.script} --input_ratio {input.tsv_results} --input_switch {input.tsv_RevBayes} --output {output.pdf}'
+        'python3 {input.script} --input_ratio {input.tsv_results} --input_switch {input.tsv_RevBayes} --output {output.plot}'
 
 rule plot_clade_corr:
     input:
         script=f"{FOLDER}/scripts/plot_clade_corr.py",
-        tsv_results=expand(f"{FOLDER}/results/{{{{trait}}}}_{{clade}}/merge_{{{{method}}}}.tsv",clade=clades)
+        tsv_results=expand(f"{FOLDER}/data_merged/{{{{trait}}}}_{{clade}}/merge_{{{{method}}}}.tsv",clade=clades)
     output:
-        pdf=f"{FOLDER}/results/{{trait}}_corr_clade_{{method}}.pdf"
+        plot=f"{FOLDER}/results/{{trait}}_corr_clade_{{method}}.pdf"
     shell:
-        'python3 {input.script} --input {input.tsv_results} --output {output.pdf}'
+        'python3 {input.script} --input {input.tsv_results} --output {output.plot}'

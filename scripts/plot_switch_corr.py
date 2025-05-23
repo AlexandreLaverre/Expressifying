@@ -14,25 +14,30 @@ def main(tsv_input_ratio: str, tsv_input_switch: str, output_pdf: str):
     df_switch.rename(columns={"simu": "trait", "dataset_switch": "dataset"}, inplace=True)
     df_switch["dataset"] = df_switch["dataset"].apply(lambda x: "_".join(x.split("_")[1:]))
     df_join = pd.merge(df_trait, df_switch, on=["trait", "dataset"], suffixes=("_trait", "_switch"), how="inner")
-    assert len(df_join) > 0, f"No overlap between {tsv_input_ratio} and {tsv_input_switch}"
+    if len(df_join) == 0:
+        print(f"No overlap between {tsv_input_ratio} and {tsv_input_switch}")
+        plt.subplots(nrows=1, ncols=1, figsize=(5, 4))
+        plt.savefig(output_pdf)
+        return
     datasets = sorted(set(df_join["dataset"]))
-    fig, axs = plt.subplots(nrows=1, ncols=len(datasets), sharex='all', sharey='row',
+    fig, axs = plt.subplots(nrows=1, ncols=len(datasets), sharex='col', sharey='row',
                             figsize=(5 * len(datasets), 4))
+
     for x_1, (data, df_gr) in enumerate(df_join.groupby("dataset")):
-        df_gr["ratioqcut"] = pd.qcut(df_gr["ratio"], q=50)
+        df_gr["ratioqcut"] = pd.qcut(df_gr["ratio"], q=min(35, len(df_gr) // 2), duplicates="drop")
 
         ax = axs[x_1] if len(datasets) > 1 else axs
         ax.set_xlabel("ratio")
         ax.set_ylabel("switch")
-        ax.set_title(data)
+        ax.set_title(f"{data} (n={len(df_gr)})")
         ax.axvline(1, linestyle="--", color="black", alpha=0.5)
         ax.set_xscale("log")
-        if len(df_gr) < 2:
-            continue
 
         df = df_gr.groupby("ratioqcut", observed=False).agg({"ratio": "mean", "is_nuc": "mean"}).reset_index()
+        if len(df) < 10:
+            continue
         corr = df[f"ratio"].corr(df["is_nuc"])
-        ax.plot(df[f"ratio"], df["is_nuc"], "o", alpha=0.5, label=f"r={corr:.2g}")
+        ax.plot(df[f"ratio"], df["is_nuc"], "o", alpha=1.0, label=f"r={corr:.2g}")
         ax.legend()
     plt.tight_layout()
     plt.savefig(output_pdf)
