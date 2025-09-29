@@ -1,8 +1,6 @@
 import os
 import argparse
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
+from libraries_plot import *
 
 
 def main(tsv_input: str, gene_table: str, output_pdf: str):
@@ -20,30 +18,17 @@ def main(tsv_input: str, gene_table: str, output_pdf: str):
     fig, axs = plt.subplots(nrows=len(omega_list), ncols=len(datasets), sharex='col', sharey='row',
                             figsize=(5 * len(datasets), 4 * len(omega_list)))
     for x_1, (data, df_gr) in enumerate(df_join.groupby("dataset")):
-        df_gr["ratioqcut"] = pd.qcut(df_gr["ratio"], q=min(35, len(df_gr) // 2), duplicates="drop")
+        df_gr["log_ratio"] = df_gr["ratio"].apply(lambda x: np.log10(x) if x > 0 else np.nan)
         for x_2, omega in enumerate(omega_list):
             ax = axs[x_2, x_1] if len(datasets) > 1 else axs[x_2]
-            ax.set_xlabel("ratio")
+            ax.set_xlabel("Ratio (log10)")
             ax.set_ylabel(omega)
             ax.set_title(f"{data} (n={len(df_gr)})")
-            ax.axvline(1, linestyle="--", color="black", alpha=0.5)
-            ax.set_xscale("log")
+            ax.axvline(0.0, linestyle="--", color="black", alpha=0.5)
             if omega == "ωA_phy":
                 ax.axhline(0, linestyle="--", color="black", alpha=0.5)
-            else:
-                ax.set_yscale("log")
 
-            df = df_gr.groupby("ratioqcut", observed=False).agg({"ratio": "mean", omega: "mean"}).reset_index()
-            if len(df) < 10:
-                continue
-            df["ln_ratio"] = np.log(df["ratio"])
-            corr = df["ln_ratio"].corr(df[omega])
-            ax.plot(df[f"ratio"], df[omega], "o", alpha=1.0, label=f"n={len(df_gr)} ({len(df)} bins)")
-            # Plot the linear regression line
-            m, b = np.polyfit(df["ln_ratio"], df[omega], 1)
-            x = np.linspace(df["ln_ratio"].min(), df["ln_ratio"].max(), 100)
-            y = m * x + b
-            ax.plot(np.exp(x), y, color="red", alpha=0.5, label=f"y={m:.2g}x+{b:.2g} (r={corr:.2g})")
+            plot_scatter_bins(ax, x_label="log_ratio", y_label=omega, df=df_gr, q=100)
     plt.tight_layout()
     plt.savefig(output_pdf)
     plt.close("all")

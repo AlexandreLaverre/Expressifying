@@ -1,8 +1,6 @@
 import os
 import argparse
-import pandas as pd
-import matplotlib.pyplot as plt
-
+from libraries_plot import *
 
 def main(tsv_input_ratio: str, tsv_input_switch: str, output_pdf: str):
     output_dir = os.path.dirname(output_pdf)
@@ -24,21 +22,15 @@ def main(tsv_input_ratio: str, tsv_input_switch: str, output_pdf: str):
                             figsize=(5 * len(datasets), 4))
 
     for x_1, (data, df_gr) in enumerate(df_join.groupby("dataset")):
-        df_gr["ratioqcut"] = pd.qcut(df_gr["ratio"], q=min(35, len(df_gr) // 2), duplicates="drop")
-
         ax = axs[x_1] if len(datasets) > 1 else axs
-        ax.set_xlabel("ratio")
+        ax.set_xlabel("Ratio (log10)")
         ax.set_ylabel("switch")
         ax.set_title(f"{data} (n={len(df_gr)})")
-        ax.axvline(1, linestyle="--", color="black", alpha=0.5)
-        ax.set_xscale("log")
+        ax.axvline(0.0, linestyle="--", color="black", alpha=0.5)
+        df_gr["log_ratio"] = df_gr["ratio"].apply(lambda x: np.log10(x) if x > 0 else np.nan)
+        plot_scatter_bins(ax, x_label="log_ratio", y_label="is_nuc", df=df_gr, q=200)
+        # plot_2d_histogram(ax, df_gr["log_ratio"], df_gr["is_nuc"], bins=30, cmap="Blues")
 
-        df = df_gr.groupby("ratioqcut", observed=False).agg({"ratio": "mean", "is_nuc": "mean"}).reset_index()
-        if len(df) < 10:
-            continue
-        corr = df[f"ratio"].corr(df["is_nuc"])
-        ax.plot(df[f"ratio"], df["is_nuc"], "o", alpha=1.0, label=f"r={corr:.2g}")
-        ax.legend()
     plt.tight_layout()
     plt.savefig(output_pdf)
     plt.close("all")

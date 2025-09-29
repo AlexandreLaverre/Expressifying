@@ -12,6 +12,7 @@ oma_data = config["OMA_DATA"]
 methods = config["METHODS"]
 clades = config["CLADES"]
 orthologs_path = f"{FOLDER}/data/gene_orthologies/one2one_orthogroups_{oma_data}_mammals.csv"
+mammal_tree_path = f"{FOLDER}/data/science.abl8189.Timescale/Table_S2_RootedTrees/Concatenation_HRA_neutral_241_10miss_rooted.tree"
 
 wildcard_constraints:
     # constrain to only alphanumeric characters and underscore
@@ -20,23 +21,29 @@ wildcard_constraints:
 rule all:
     input:
         expand(f"{FOLDER}/results/{{trait}}_{{clade}}/corr_dataset_{{method}}_{{trait}}.png",method=methods,trait=traits,clade=clades),
+        expand(f"{FOLDER}/results/{{trait}}_{{clade}}/hist_switch_{{trait}}.pdf",trait=traits,clade=clades),
         expand(f"{FOLDER}/results/{{trait}}_{{clade}}/corr_switch_{{method}}_{{trait}}.pdf",method=methods,trait=traits,clade=clades),
         expand(f"{FOLDER}/results/{{trait}}_{{clade}}/trait_sequence_corr_{{method}}_{{trait}}.pdf",method=methods, trait=traits,clade=clades),
         expand(f"{FOLDER}/results/{{trait}}_{{clade}}/trait_cross_corr_{{organ}}_{{method}}_{{trait}}.pdf",method=methods, trait=traits, clade=clades, organ=["liver","nucleus"]),
+        expand(f"{FOLDER}/results/{{trait}}_{{clade}}/trait_gilad_corr_{{method}}_{{trait}}.pdf",method=methods, trait=traits, clade=clades),
+        expand(f"{FOLDER}/results/{{trait}}_{{clade}}/trait_PBS_corr_h{{h2}}_{{method}}_{{trait}}.pdf",method=methods, trait=traits, clade=clades, h2=["0.5","1.0"]),
         expand(f"{FOLDER}/results/{{trait}}_{{clade}}/merged_boxplot_{{trait}}.pdf",trait=traits,clade=clades),
         expand(f"{FOLDER}/results/{{trait}}_{{clade}}/corr_method_{{trait}}.png",trait=traits,clade=clades),
-        expand(f"{FOLDER}/results/{{trait}}_corr_clade_{{method}}.pdf",method=methods,trait=traits)
+        expand(f"{FOLDER}/results/{{trait}}_corr_clade_{{method}}.pdf",method=methods,trait=traits),
+        expand(f"{FOLDER}/results/{{trait}}_PBS_clade_h{{h2}}_{{method}}.pdf",method=methods,trait=traits,h2=["0.5","1.0"]),
+        expand(f"{FOLDER}/results/{{trait}}_cross_clade_{{organ}}_{{method}}.pdf",method=methods,trait=traits,organ=["liver","nucleus"]),
 
 rule plot_boxplots:
     input:
         script=f"{FOLDER}/scripts/plot_boxplots.py",
+        tree_file=mammal_tree_path,
         tsv_traits=expand(f"{bgee_ortho}/{{{{trait}}}}/{{dataset}}.csv",dataset=datasets),
-        tsv_Bayes=f"{FOLDER}/data_merged/{{trait}}_{{clade}}/merge_Bayes.tsv",
+        tsv_Bayes=f"{FOLDER}/data_merged/{{trait}}_{{clade}}/merge_BayesCode.tsv",
         input_orthogroups=orthologs_path
     output:
         plot=f"{FOLDER}/results/{{trait}}_{{clade}}/merged_boxplot_{{trait}}.pdf"
     shell:
-        'python3 {input.script} --input_orthogroups {input.input_orthogroups} --tsv_traits {input.tsv_traits} --tsv_Bayes {input.tsv_Bayes} --output {output.plot}'
+        'python3 {input.script} --tree_file {input.tree_file} --input_orthogroups {input.input_orthogroups} --tsv_traits {input.tsv_traits} --tsv_Bayes {input.tsv_Bayes} --output {output.plot}'
 
 rule plot_dataset_corr:
     input:
@@ -77,6 +84,39 @@ rule trait_cross_corr:
     shell:
         'python3 {input.script} --input {input.tsv_rho} --gene_table {input.gene_table} --cross_table {input.cross_table} --output {output.plot}'
 
+rule trait_gilad_corr:
+    input:
+        script=f"{FOLDER}/scripts/trait_gilad_corr.py",
+        tsv_rho=f"{FOLDER}/data_merged/{{trait}}_{{clade}}/merge_{{method}}.tsv",
+        gene_table=f"{FOLDER}/data/adaptation/GeneTable.tsv",
+        cross_table=f"{FOLDER}/data/Gilad2006/Homo_Chimp.csv"
+    output:
+        plot=f"{FOLDER}/results/{{trait}}_{{clade}}/trait_gilad_corr_{{method}}_{{trait}}.pdf"
+    shell:
+        'python3 {input.script} --input {input.tsv_rho} --gene_table {input.gene_table} --cross_table {input.cross_table} --output {output.plot}'
+
+
+rule trait_PBS_corr:
+    input:
+        script=f"{FOLDER}/scripts/trait_PBS_corr.py",
+        tsv_rho=f"{FOLDER}/data_merged/{{trait}}_{{clade}}/merge_{{method}}.tsv",
+        pst_table=f"{FOLDER}/data/PBS/PST_h{{h2}}.csv",
+        fst_table=f"{FOLDER}/data/PBS/FST.csv"
+    output:
+        plot=f"{FOLDER}/results/{{trait}}_{{clade}}/trait_PBS_corr_h{{h2}}_{{method}}_{{trait}}.pdf"
+    shell:
+        'python3 {input.script} --input {input.tsv_rho} --fst_table {input.fst_table} --pst_table {input.pst_table} --output {output.plot}'
+
+rule plot_switch_hist:
+    input:
+        script=f"{FOLDER}/scripts/plot_switch_hist.py",
+        tsv_RevBayes=f"{FOLDER}/data_merged/{{trait}}_{{clade}}/switch_RevBayes.tsv"
+    output:
+        plot=f"{FOLDER}/results/{{trait}}_{{clade}}/hist_switch_{{trait}}.pdf"
+    shell:
+        'python3 {input.script} --input_switch {input.tsv_RevBayes} --output {output.plot}'
+
+
 rule plot_switch_corr:
     input:
         script=f"{FOLDER}/scripts/plot_switch_corr.py",
@@ -95,3 +135,27 @@ rule plot_clade_corr:
         plot=f"{FOLDER}/results/{{trait}}_corr_clade_{{method}}.pdf"
     shell:
         'python3 {input.script} --input {input.tsv_results} --output {output.plot}'
+
+
+rule plot_clade_PBS:
+    input:
+        script=f"{FOLDER}/scripts/plot_clade_PBS.py",
+        tsv_rho=expand(f"{FOLDER}/data_merged/{{{{trait}}}}_{{clade}}/merge_{{{{method}}}}.tsv", clade=clades),
+        pst_table=f"{FOLDER}/data/PBS/PST_h{{h2}}.csv",
+        fst_table=f"{FOLDER}/data/PBS/FST.csv"
+    output:
+        plot=f"{FOLDER}/results/{{trait}}_PBS_clade_h{{h2}}_{{method}}.pdf"
+    shell:
+        'python3 {input.script} --input {input.tsv_rho} --fst_table {input.fst_table} --pst_table {input.pst_table} --output {output.plot}'
+
+
+rule plot_clade_cross:
+    input:
+        script=f"{FOLDER}/scripts/plot_clade_cross.py",
+        tsv_rho=expand(f"{FOLDER}/data_merged/{{{{trait}}}}_{{clade}}/merge_{{{{method}}}}.tsv", clade=clades),
+        gene_table=f"{FOLDER}/data/adaptation/GeneTable.tsv",
+        cross_table=f"{FOLDER}/data/genetic_cross/mouse_{{organ}}.csv"
+    output:
+        plot=f"{FOLDER}/results/{{trait}}_cross_clade_{{organ}}_{{method}}.pdf"
+    shell:
+        'python3 {input.script} --input {input.tsv_rho} --gene_table {input.gene_table} --cross_table {input.cross_table} --output {output.plot}'

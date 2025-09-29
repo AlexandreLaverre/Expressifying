@@ -3,10 +3,8 @@ import pandas as pd
 import seaborn as sns
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-from matplotlib.patches import Rectangle
-from matplotlib.lines import Line2D
 from statannotations.Annotator import Annotator
-import scipy.stats as sci_stats
+from scipy import stats
 
 mpl.use('Agg')
 hist_filled = {'alpha': 0.3, 'histtype': 'stepfilled'}
@@ -23,11 +21,6 @@ YELLOW = "#F0E442"
 CYAN = "#56B4E9"
 WHITE = "#FFFFFF"
 BLACK = "#000000"
-cs_simu_models = {"N": (ORANGE, "Neutral"), "M": (RED, "Multiple optima"), "B": (BLUE, "Moving optimum")}
-
-
-def gr_simu_models(x):
-    return "N" if ("neutral" in x) else ("M" if (("multi" in x) and ("optimum" in x)) else "B")
 
 
 def tex_f(x):
@@ -45,130 +38,120 @@ def tex_f(x):
     return s
 
 
-def color_simu_models(x_list):
-    grs = [gr_simu_models(xl) for xl in x_list]
-    color_list = [cs_simu_models[g][0] for g in grs]
-    handles = [Rectangle((0, 0), 1, 1, color=v[0], ec="k", lw=1, label=v[1])
-               for c, v in cs_simu_models.items() if c in set(grs)]
-    return color_list, handles
+def plot_cat_box(ax, x_label, y_label, df, annotate=True, scale=""):
+    filter_nan = np.isfinite(df[y_label])
+    df_input = df[filter_nan].copy()
+    sorted_x = sorted(df_input[x_label].unique())
+    # One boxplot per category
+    if scale == "log":
+        df_input = df_input[df_input[y_label] > 0.0]
+    sns.boxplot(data=df_input, x=x_label, y=y_label, order=sorted_x, ax=ax, notch=True,
+                medianprops={'color': 'black'}, showfliers=False, width=0.9, log_scale=(scale == "log"))
 
-
-def color_mf_models(x_list):
-    cs = {"m": (RED, "Males"), "f": (BLUE, "Females"), "b": (ORANGE, "Both")}
-    grs = [xl[0] for xl in x_list]
-    color_list = [cs[g][0] for g in grs]
-    handles = [Rectangle((0, 0), 1, 1, color=v[0], ec="k", lw=1, label=v[1]) for c, v in cs.items() if c in set(grs)]
-    return color_list, handles
-
-
-def color_empirical_models(x_list):
-    cs = {"bodyMass": (BLUE, "Body Mass"), "brainMass": (GREEN, "Brain mass")}
-    grs = [("bodyMass" if "body" in xl.lower() else "brainMass") for xl in x_list]
-    color_list = [cs[g][0] for g in grs]
-    handles = [Rectangle((0, 0), 1, 1, color=v[0], ec="k", lw=1, label=v[1]) for c, v in cs.items() if c in set(grs)]
-    return color_list, handles
-
-
-def filter_x(x_input, xscale):
-    x = {k: np.array(v) for k, v in x_input.items()}
-    if xscale == "log":
-        xy_filtered = {k: (np.isfinite(x[k]) & (x[k] > 0)) for k in x.keys()}
-    else:
-        xy_filtered = {k: np.isfinite(x[k]) for k in x.keys()}
-    return {k: x[k][xy_filtered[k]] for k in x.keys() if len(x[k][xy_filtered[k]]) > 0}
-
-
-def sort_x(list_x):
-    # Put the neutral model first, then the multiple optima model, then the moving optimum model
-    return list(sorted(list_x, key=lambda x: 0 if "neutral" in x else (1 if "moving" in x and "optimum" in x else 2)))
-
-
-def remove_chrono_phylo(x):
-    return x.replace("Chrono", "").replace("Phylo", "")
-
-
-def vert_boxplot(x_input, y_label, output, yscale="linear", format_label=None, empirical=False, prior=None,
-                 var_name=""):
-    x = filter_x(x_input, yscale)
-    if len(x) < 1:
-        return
-    sorted_x = sort_x(x.keys())
-    if empirical:
-        color_models, handles = color_empirical_models(sorted_x)
-    else:
-        color_models, handles = color_simu_models(sorted_x)
-    fig = plt.figure(figsize=(1280 / my_dpi, 640 / my_dpi), dpi=my_dpi)
-    ax = fig.add_subplot(1, 1, 1)
-    df = pd.DataFrame({"y": np.concatenate([x[k] for k in sorted_x]),
-                       "x": np.concatenate([[k] * len(x[k]) for k in sorted_x])})
-    sns.violinplot(data=df, x="x", y="y", ax=ax, palette=color_models, log_scale=(yscale == "log"), inner="stick",
-                   cut=0, legend=False, hue="x", linewidth=0.5, linecolor="auto")
-    ax.set_xlabel("")
-    if "".join(sorted_x).count("Both") > 0:
-        handles = []
-        for i, k in enumerate(sorted_x):
-            # Print the proportion above the 95% and below the 5% quantiles
-            count_95 = len([1 for v in x[k] if v > .95])
-            count_05 = len([1 for v in x[k] if v < .05])
-            if count_95 > 0:
-                ax.text(i, 0.95, f"{count_95} / {len(x[k])} > 0.95",
-                        bbox=dict(facecolor="white", edgecolor="black", boxstyle="round", pad=0.15),
-                        fontsize=13, ha="center", va="center", zorder=10)
-            if count_05 > 0:
-                ax.text(i, 0.05, f"{count_05} / {len(x[k])} < 0.05",
-                        bbox=dict(facecolor="white", edgecolor="black", boxstyle="round", pad=0.15),
-                        fontsize=13, ha="center", va="center", zorder=10)
-            mean_txt = f"${var_name}={np.mean(x[k]):.2f}$"
-            ax.text(i, 0.55, mean_txt,
-                    bbox=dict(facecolor="white", edgecolor=color_models[i], boxstyle="round", pad=0.4),
-                    fontsize=13, ha="center", va="center", zorder=10)
-        if yscale == "uniform":
-            ax.axhline(0.05, color="grey", linestyle="--", linewidth=1)
-            ax.axhline(0.95, color="grey", linestyle="--", linewidth=1)
-    else:
-        # Add the mean above each violin
-        for i, k in enumerate(sorted_x):
-            x_mean = np.mean(x[k])
-            mean_txt = f"${var_name}={np.mean(x[k]):.2g}$"
-            ax.text(i, x_mean, mean_txt,
-                    bbox=dict(facecolor="white", edgecolor="black", boxstyle="round", pad=0.15),
-                    fontsize=13, ha="center", va="center", zorder=10)
-        # Test the difference between the models
-        # They must be different only for chronogram/phylogram in the name
+    # Add the p-values for each pair of categories
+    if annotate:
+        x = {cat: group[y_label].values for cat, group in df_input.groupby(x_label, observed=True)}
         pairs = []
         for i in range(1, len(sorted_x)):
-            if remove_chrono_phylo(sorted_x[i - 1]) == remove_chrono_phylo(sorted_x[i]):
-                pairs.append((sorted_x[i - 1], sorted_x[i]))
+            pairs.append((sorted_x[i - 1], sorted_x[i]))
         if len(pairs) > 0:
             pvalues = []
             for pair in pairs:
-                pvalues.append(sci_stats.wilcoxon(x[pair[0]], x[pair[1]], alternative="two-sided").pvalue)
+                pvalues.append(stats.ttest_ind(x[pair[0]], x[pair[1]], alternative="two-sided").pvalue)
             formatted_pvalues = [f'$p={tex_f(pvalue)}$' for pvalue in pvalues]
-            annotator = Annotator(ax, pairs, data=df, x="x", y="y", order=sorted_x)
-            annotator.configure(loc='outside', verbose=0)
+            annotator = Annotator(ax, pairs, data=df_input, x=x_label, y=y_label, order=sorted_x)
+            annotator.configure(loc='inside', verbose=0)
             annotator.set_custom_annotations(formatted_pvalues)
             annotator.annotate()
-
-    ax.set_ylabel(y_label, fontsize=fontsize_legend)
-    labels = [m.replace("_", " ") for m in sorted_x]
-    if format_label is not None:
-        labels = [format_label(l) for l in labels]
-    ax.set_xticks(range(len(labels)))
-    ax.set_xticklabels(labels, fontsize=fontsize_legend)
-    if len(x) < 6:
+    ax.set_xlim(-0.5, len(sorted_x) - 0.5)
+    ax.set_xticks(range(len(sorted_x)))
+    # Count the number of samples in each category
+    counts = df_input[x_label].value_counts().reindex(sorted_x, fill_value=0)
+    ax.set_xticklabels([cat + f"\nn={counts[cat]}" for cat in sorted_x])
+    if len(sorted_x) < 6:
         plt.xticks(rotation=0, ha="center")
     else:
         plt.xticks(rotation=45, ha="right")
-    if prior is not None:
-        ax.axhline(prior, color="black", linestyle="-", linewidth=1)
-        handles.append(Line2D([0], [0], color="black", linestyle="-", label=f"Prior ({prior})"))
-    if yscale == "uniform":
-        ax.set_ylim((0.0, 1.0))
-    if len(handles) > 1:
-        ax.legend(handles=handles, fontsize=12)
-    plt.tight_layout()
-    plt.savefig(output, format="pdf")
-    plt.savefig(output.replace(".pdf", ".png"), format="png")
-    plt.clf()
-    plt.close("all")
-    print(output)
+    ax.margins(x=0.05)
+    ax.set_xlabel("")
+
+
+def plot_bar(ax, x_label, y_label, df, q=30):
+    filter_nan = (np.isfinite(df[x_label]) & np.isfinite(df[y_label]))
+    df_input = df[filter_nan].copy()
+    df_input["xqcut"] = pd.qcut(df_input[x_label], q=min(q, len(df) // 2), duplicates="drop")
+
+    df_gb = df_input.groupby("xqcut", observed=True).agg({x_label: "mean", y_label: "mean"}).reset_index()
+    if len(df_gb) < 2:
+        return
+    ax.bar(np.arange(len(df_gb)),
+           df_gb[y_label] - df_gb[y_label].min() + 0.05 * (df_gb[y_label].max() - df_gb[y_label].min()))
+
+
+def plot_scatter_bins(ax, x_label, y_label, df, q=30):
+    filter_nan = (np.isfinite(df[x_label]) & np.isfinite(df[y_label]))
+    df_input = df[filter_nan].copy()
+    df_input["xqcut"] = pd.qcut(df_input[x_label], q=min(q, len(df) // 2), duplicates="drop")
+    gb = df_input.groupby("xqcut", observed=True)
+    df_gb = gb.agg({x_label: "mean", y_label: "mean"}).reset_index()
+    # Calculate standard deviation for error bars
+    df_gb[f"{y_label}_std"] = gb[y_label].std().values
+    if len(df_gb) < 10:
+        return
+    corr = df_gb[x_label].corr(df_gb[y_label])
+    ax.plot(df_gb[x_label], df_gb[y_label], "o", alpha=1.0, label=f"r={corr:.2g}")
+    ax.errorbar(df_gb[x_label], df_gb[y_label], yerr=df_gb[f"{y_label}_std"],
+                fmt='none', alpha=0.5, ecolor="black", capsize=3)
+    # Plot the linear regression line
+    m, b = np.polyfit(df_gb[x_label], df_gb[y_label], 1)
+    x = np.linspace(df_gb[x_label].min(), df_gb[x_label].max(), 100)
+    y = m * x + b
+    ax.plot(x, y, color="red", alpha=0.5, label=f"y={m:.2g}x+{b:.2g} (r={corr:.2g})")
+    ax.legend()
+
+
+def plot_bins_box(ax, x_label, y_label, df, q=30, scale=""):
+    filter_nan = (np.isfinite(df[x_label]) & np.isfinite(df[y_label]))
+    df_input = df[filter_nan].copy()
+    qeff = min(q, len(df) // 2)
+    df_input["xqcut"] = pd.qcut(df_input[x_label], q=qeff, duplicates="drop", labels=[f"Q{i}" for i in range(qeff)])
+    plot_cat_box(ax, x_label="xqcut", y_label=y_label, df=df_input, annotate=False, scale=scale)
+
+
+def plot_2d_histogram(ax, x, y, bins=30, cmap="Blues"):
+    """
+    Plot a 2D histogram on the given axes as contour plot.
+    """
+    # Clip to avoid extreme values, use the 1% and 99% quantiles
+    x = np.clip(x, np.quantile(x, 0.01), np.quantile(x, 0.99))
+    y = np.clip(y, np.quantile(y, 0.01), np.quantile(y, 0.99))
+    hist, xedges, yedges = np.histogram2d(x, y, bins=bins)
+    X, Y = np.meshgrid(xedges[:-1], yedges[:-1], indexing='ij')
+    # Gaussian smoothing
+    hist = stats.gaussian_kde(np.vstack([x, y]), bw_method='scott')(np.vstack([X.ravel(), Y.ravel()])).reshape(X.shape)
+    # Use pcolormesh for better performance with large datasets
+    ax.pcolormesh(X, Y, hist.T, cmap=cmap, shading='auto')
+    # Add contour lines
+    ax.contour(X, Y, hist.T, levels=10, colors='black', linewidths=0.5, linestyles='dashed')
+
+
+def annotate_category(df, clade_1, clade_2, v="ratio"):
+    t_1_max = df[f"{v}_{clade_1}"].quantile(0.75)
+    t_1_min = df[f"{v}_{clade_1}"].quantile(0.25)
+    t_2_max = df[f"{v}_{clade_2}"].quantile(0.75)
+    t_2_min = df[f"{v}_{clade_2}"].quantile(0.25)
+
+    def annotate_row(row):
+        # Split the dataframe into four categories based on the ratio:
+        if row[f"{v}_{clade_1}"] > t_1_max and row[f"{v}_{clade_2}"] > t_2_max:
+            return f"Div in both"
+        elif row[f"{v}_{clade_1}"] <= t_1_min and row[f"{v}_{clade_2}"] <= t_2_min:
+            return "Stab"
+        elif row[f"{v}_{clade_1}"] > t_1_max and row[f"{v}_{clade_2}"] <= t_2_min:
+            return f"Div in {clade_1}"
+        elif row[f"{v}_{clade_1}"] <= t_1_min and row[f"{v}_{clade_2}"] > t_2_max:
+            return f"Div in {clade_2}"
+        else:
+            return "Other"
+
+    return df.apply(lambda row: annotate_row(row), axis=1)

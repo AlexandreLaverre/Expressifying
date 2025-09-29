@@ -1,7 +1,9 @@
 import os
 import argparse
+from ete3 import Tree
 import pandas as pd
 import matplotlib.pyplot as plt
+import seaborn as sns
 from neutrality_index import replace_last
 
 preamble = """
@@ -43,8 +45,12 @@ def find_between(input_str: str, begin: str, last: str):
     return input_str[i + len(begin): j]
 
 
-def main(tsv_traits_list: str, tsv_Bayes: str, input_orthogroups: str, output_pdf: str):
+def main(tsv_traits_list: str, tree_file: str, tsv_Bayes: str, input_orthogroups: str, output_pdf: str):
     output_dir = os.path.dirname(output_pdf)
+    t = Tree(tree_file)
+    # Traverse the tree and get species names
+    species_names = [n.name for n in t.traverse("postorder") if n.is_leaf()]
+    species_order = {v: k for k, v in enumerate(species_names)}
     folder_plots = f"{output_dir}/boxplots"
     os.makedirs(folder_plots, exist_ok=True)
     os.makedirs(output_dir, exist_ok=True)
@@ -74,8 +80,15 @@ def main(tsv_traits_list: str, tsv_Bayes: str, input_orthogroups: str, output_pd
             gp = dataset_df[["species", orthogroup]]
             # Remove the species with missing values
             gp = gp.dropna()
+            # filter the species to keep only those in the tree
+            gp = gp[gp["species"].isin(set(species_names))]
+            # Sort the species by the order in the tree
+            gp["species_index"] = gp["species"].map(lambda x: species_order[x])
+            gp = gp.sort_values("species_index")
+            # Remove "_" in the species names and capitalize the first letter of each word
+            gp["species"] = gp["species"].str.replace("_", " ").str.title()
             # Rotate the labels on the x-axis
-            gp.boxplot(column=orthogroup, by="species", figsize=(12, 6))
+            sns.boxplot(data=gp, x="species", y=orthogroup)
             plt.xticks(rotation=45, ha='right')
             plt.title(title, fontsize=20)
             plt.suptitle("")
@@ -98,8 +111,9 @@ def main(tsv_traits_list: str, tsv_Bayes: str, input_orthogroups: str, output_pd
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("--tsv_traits", nargs="+", help="Input tsv trait files", required=False)
+    parser.add_argument("--tree_file", help="Input tree file", required=False)
     parser.add_argument("--tsv_Bayes", help="Input tsv BayesCode", required=False)
     parser.add_argument("--input_orthogroups", help="Input orthogroups file", required=False, default="")
     parser.add_argument("--output", help="Output pdf file", required=True)
     args = parser.parse_args()
-    main(args.tsv_traits, args.tsv_Bayes, args.input_orthogroups, args.output)
+    main(args.tsv_traits, args.tree_file, args.tsv_Bayes, args.input_orthogroups, args.output)

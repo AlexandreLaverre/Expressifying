@@ -14,7 +14,7 @@ __pycache__
 /shelf/
 /workspace.xml
 .DS_Store
-
+/data_merged
 
 # Editor-based HTTP Client requests
 /httpRequests/

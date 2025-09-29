@@ -3,19 +3,6 @@ import argparse
 from libraries_plot import *
 
 
-def logit(x):
-    # Bound to -4, 4
-    x = np.clip(x, 1e-3, 1 - 1e-3)
-    return np.log(x / (1 - x))
-
-
-def categorize_p_value(p_value):
-    if p_value < 0.1:
-        return "Directional selection"
-    else:
-        return "Control"
-
-
 def main(tsv_input: str, gene_table: str, cross_table: str, output_pdf: str):
     output_dir = os.path.dirname(output_pdf)
     os.makedirs(output_dir, exist_ok=True)
@@ -25,28 +12,28 @@ def main(tsv_input: str, gene_table: str, cross_table: str, output_pdf: str):
     dico_gene = {row["ENSG"].split('_')[1].upper(): row["ENSG"].split('_')[0] for _, row in df_gene.iterrows()}
 
     df_cross = pd.read_csv(cross_table, sep=',')
-    df_cross["trait"] = df_cross["gene"].apply(lambda x: str(x).upper())
+    df_cross["trait"] = df_cross["Gene.Symbol"].apply(lambda x: str(x).upper())
     df_cross["trait"] = df_cross["trait"].apply(lambda x: dico_gene[x] if x in dico_gene else x)
     # groupby trait and take the mean
-    df_cross = df_cross.groupby("trait").agg({"p-value": "mean", "parental difference (B6-DBA)": "mean"}).reset_index()
-    df_cross["logit p-value"] = logit(df_cross["p-value"])
-    df_cross["abs difference"] = np.abs(df_cross["parental difference (B6-DBA)"])
-    df_cross["category"] = df_cross["p-value"].apply(categorize_p_value)
-    # Remove the neutral category
-    # df_cross = df_cross[df_cross["category"] != "M2"]
+
     df_join = pd.merge(df_trait, df_cross, on="trait", suffixes=("_trait", "_cross"), how="inner")
+    # Filter only to M3 and M4 datasets
+    df_join = df_join[df_join["Table"].str.contains("M3|M4")]
+    # Replace M3 by M3: Dir and M4 by M4: Stab
+    df_join["Table"] = df_join["Table"].replace({"M3": "M2 (Directional)", "M4": "M1: (Stabilizing)"})
     assert len(df_join) > 0, f"No overlap between {tsv_input} and {gene_table}"
 
     datasets = sorted(set(df_join["dataset"]))
     fig, axs = plt.subplots(nrows=1, ncols=len(datasets), figsize=(5 * len(datasets), 4))
     gpby = df_join.groupby("dataset")
-    n = min([len(df) for _, df in gpby])
-    for x_1, (dataset, df_gr) in enumerate(df_join.groupby("dataset")):
+    for x_1, (dataset, df_gr) in enumerate(gpby):
         df_gr["log_ratio"] = df_gr["ratio"].apply(lambda x: np.log10(x) if x > 0 else np.nan)
-        ax = axs[x_1] if len(datasets) > 1 else axs
-        ax.set_title(f"{dataset} (n={len(df_gr)})")
-        ax.set_ylabel("Ratio")
-        plot_cat_box(ax, x_label="category", y_label="ratio", df=df_gr, scale="log")
+        for x_2, value in enumerate(["Table"]):
+            ax = axs[x_1] if len(datasets) > 1 else axs
+            ax.set_title(f"{str(dataset).split('_')[0].capitalize()} (n={len(df_gr)})")
+            ax.set_ylabel("Ratio")
+            plot_cat_box(ax, x_label=value, y_label="ratio", df=df_gr, scale="log")
+
     plt.tight_layout()
     plt.savefig(output_pdf)
     plt.close("all")
